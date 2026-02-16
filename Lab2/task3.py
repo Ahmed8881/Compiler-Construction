@@ -316,12 +316,10 @@ def print_report(results):
     # Header
     print("Task 3: Character Stream Interface")
     print()
-    # Buffer Configuration
     print("Buffer Configuration:")
     print(f"- Buffer Size: {results['buffer_size']} bytes")
     print(f"- Total File Size: {results['total_file_size']} bytes")
     print()
-    # Reading Statistics
     improvement = 0.0
     try:
         improvement = (results['single_time_ms'] - results['double_time_ms']) / results['single_time_ms'] * 100.0
@@ -335,7 +333,6 @@ def print_report(results):
     print(f"- Processing time (double buffer): {results['double_time_ms']:.3f}ms")
     print(f"- Performance improvement: {improvement:.1f}%")
     print()
-    # Buffer Transition Demo (show first few transitions)
     print("Buffer Transition Demo:")
     if not results['transitions']:
         print("No buffer transitions recorded.")
@@ -357,7 +354,6 @@ def print_report(results):
     print(f"Characters processed: {results['chars_processed']}")
     print("EOF reached successfully.")
 
-    # ---------- Tokens sample using Lab1/tokenize_expression ----------
     print()
     print("Tokens (sample from file, first 40 tokens):")
     try:
