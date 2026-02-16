@@ -5,7 +5,6 @@ import time
 from pathlib import Path
 from typing import Optional
 
-# Ensure Lab1 is importable so we can reuse its tokenizer
 lab1_dir = Path(__file__).resolve().parents[1] / "Lab1"
 if str(lab1_dir) not in sys.path:
     sys.path.insert(0, str(lab1_dir))
