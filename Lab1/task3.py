@@ -60,11 +60,13 @@ def parseTerm():
                 advance()
                 right = parseFactor()
                 if op == "*":
-                    print(f"  Applying {left} * {right}")
-                    left *= right
+                    before = left
+                    left = before * right
+                    print(f"  Applying {before} * {right} = {left}")
                 else:
-                    print(f"  Applying {left} / {right}")
-                    left /= right
+                    before = left
+                    left = before / right
+                    print(f"  Applying {before} / {right} = {left}")
             else:
                 break
         else:
@@ -83,17 +85,18 @@ def parseExpression():
                 advance()
                 right = parseTerm()
                 if op == "+":
-                    print(f"  Applying {left} + {right}")
-                    left += right
+                    before = left
+                    left = before + right
+                    print(f"  Applying {before} + {right} = {left}")
                 else:
-                    print(f"  Applying {left} - {right}")
-                    left -= right
+                    before = left
+                    left = before - right
+                    print(f"  Applying {before} - {right} = {left}")
             else:
                 break
         else:
             break
     return left
-
 
 def evaluate(tokens_input):
     global tokens, pos

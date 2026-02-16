@@ -1,0 +1,137 @@
+% Lab 1 Report - Expression Evaluator (Tasks 1 & 3)
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{courier}
+\geometry{margin=1in}
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+
+\title{Compiler Construction --- Lab 1\\Expression Evaluator}
+\author{CS-471L Students\\University of Engineering and Technology, Lahore}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+This document describes the implementations for Task 1 (tokenizer) and Task 3 (parser and evaluator with variables) for Lab 1. It explains how to install Python, run the scripts, and summarizes the behavior and sample outputs.
+
+\section{Environment and Requirements}
+\begin{itemize}
+  \item Python 3.8 or later (3.10/3.11/3.12 recommended).
+  \item No external packages required; the code uses only Python standard library.
+\end{itemize}
+
+\subsection*{Installing Python (Windows)}
+\begin{enumerate}
+  \item Download the installer from \url{https://www.python.org/downloads/} (choose latest stable 3.x).
+  \item Run the installer and check ``Add Python to PATH'' before clicking Install.
+  \item Verify installation in PowerShell or Command Prompt:
+\begin{lstlisting}
+python --version
+# or
+py -3 --version
+\end{lstlisting}
+  \item If you use a virtual environment, create one and activate before running the lab scripts:
+\begin{lstlisting}
+python -m venv venv
+venv\Scripts\activate   % on Windows
+\end{lstlisting}
+\end{enumerate}
+
+\section{Files}
+\begin{itemize}
+  \item \textbf{task1.py} -- Tokenizer (breaks input into tokens, prints step-by-step tokenization).
+  \item \textbf{task3.py} -- Parser and evaluator (recursive-descent parsing, AST, variable assignment, human-readable evaluation steps).
+\end{itemize}
+
+\section{How to run}
+Open a terminal in the folder \texttt{Lab1} and run:
+\begin{lstlisting}
+python task1.py
+python task3.py
+\end{lstlisting}
+Each program reads expressions from standard input (one per line). Press Enter on an empty line to quit.
+
+\section{Task 1 -- Tokenizer (Brief Description)}
+The tokenizer reads the input string and produces a linear list of tokens. Token types used in the provided implementation are:
+\begin{itemize}
+  \item \textbf{NUMBER}: integer numeric literal (e.g. 42)
+  \item \textbf{IDENT}: identifier/variable name (e.g. x, total1)
+  \item \textbf{OP}: operators and punctuation (e.g. +, -, *, /, (, ), =)
+  \item \textbf{EOF}: end of input marker
+\end{itemize}
+
+The tokenizer also prints each discovered token as it scans, followed by the full token list.
+
+\subsection*{Sample run (task1)}
+\begin{lstlisting}
+Input expression: x = 10
+Tokenizing
+  Found IDENTIFIER -> x
+  Found OPERATOR -> =
+  Found NUMBER -> 10
+  Found EOF (End of Expression)
+All tokens collected: ['IDENT:x', 'OP:=', 'NUMBER:10', 'EOF']
+\end{lstlisting}
+
+\section{Task 3 -- Parser and Evaluator (Brief Description)}
+The parser implements a simple recursive-descent parser with the grammar:
+\begin{verbatim}
+expr   -> term ((+|-) term)*
+term   -> factor ((*|/) factor)*
+factor -> ( expr ) | NUMBER | IDENT
+statement -> IDENT '=' expr | expr
+\end{verbatim}
+
+The evaluator builds a small AST (Number, Var, BinOp, Assign) during parsing and then evaluates it. During evaluation the program records human-readable steps such as:
+\begin{itemize}
+  \item Number literal: 3
+  \item Lookup variable x => 10
+  \item Evaluating left side of PLUS
+  \item Computed 3 PLUS 4 = 7
+\end{itemize}
+
+After evaluation it prints the numbered steps and the current symbol table (variables and values).
+
+\subsection*{Sample run (task3)}
+\begin{lstlisting}
+Expression: x = 10
+Tokens: [IDENT:x, OP:=, NUMBER:10]
+AST:
+Assign(x)
+  Number(10)
+
+Evaluation steps:
+  Step 1: Evaluating assignment to x
+  Step 2: Number literal: 10
+  Step 3: Assigned x = 10
+
+Result: Variable x = 10
+
+Symbol table:
+  x = 10
+\end{lstlisting}
+
+\section{Design notes and tips}
+\begin{itemize}
+  \item The implementations are intentionally simple and readable: they avoid advanced Python features so students can follow the logic.
+  \item The tokenizer uses linear scanning; the parser uses explicit recursive-descent functions for \texttt{expr}, \texttt{term}, and \texttt{factor}.
+  \item Error handling is minimal: syntax or name errors will print an explanatory message.
+\end{itemize}
+
+\section{Extending the project}
+Possible improvements:
+\begin{itemize}
+  \item Support unary operators (unary minus)
+  \item Add floating-point numbers to the evaluator
+  \item Produce a graphical representation of the AST (e.g., DOT/Graphviz)
+  \item Add unit tests (\texttt{unittest} or \texttt{pytest}) for tokenizer, parser, and evaluator
+\end{itemize}
+
+\section*{Acknowledgements}
+Reference: Aho, Lam, Sethi, Ullman, \textit{Compilers: Principles, Techniques, and Tools} (Dragon Book).
+
+\end{document}
