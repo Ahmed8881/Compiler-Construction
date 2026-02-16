@@ -1,7 +1,19 @@
 # Task 3: Character Stream Interface (Enhanced)
 import os
+import sys
 import time
+from pathlib import Path
 from typing import Optional
+
+# Ensure Lab1 is importable so we can reuse its tokenizer
+lab1_dir = Path(__file__).resolve().parents[1] / "Lab1"
+if str(lab1_dir) not in sys.path:
+    sys.path.insert(0, str(lab1_dir))
+try:
+    from task1 import tokenize_expression
+except Exception:
+    def tokenize_expression(s):
+        return ["(tokenizer-not-available)"]
 
 SENTINEL = None
 
@@ -287,6 +299,7 @@ def benchmark(filename: str, buffer_size: int = 4096):
     results = {
         'buffer_size': buffer_size,
         'total_file_size': db.total_file_size if db.total_file_size >= 0 else count_db,
+        'filename': filename,
         'chars_processed': count_db,
         'single_time_ms': single_time_ms,
         'double_time_ms': double_time_ms,
@@ -334,14 +347,32 @@ def print_report(results):
             pos = t['switch_at_absolute']
             old_tail = "".join(t['old_tail'])
             new_head = "".join(t['new_head'])
-            print(f"[Buffer {old_act} active] Position {max(0, pos - len(old_tail))}: '{"' "'.join(list(old_tail))}'")
+            old_display = " ".join(f"'{c}'" for c in old_tail)
+            new_display = " ".join(f"'{c}'" for c in new_head)
+            print(f"[Buffer {old_act} active] Position {max(0, pos - len(old_tail))}: {old_display}")
             print(f"[Buffer switch at position {pos}]")
-            print(f"[Buffer {new_act} active] Position 0: '{"' "'.join(list(new_head))}'")
+            print(f"[Buffer {new_act} active] Position 0: {new_display}")
             print("...")
 
     print()
     print(f"Characters processed: {results['chars_processed']}")
     print("EOF reached successfully.")
+
+    # ---------- Tokens sample using Lab1/tokenize_expression ----------
+    print()
+    print("Tokens (sample from file, first 40 tokens):")
+    try:
+        fname = results.get('filename', None)
+        if fname and os.path.exists(fname):
+            with open(fname, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            toks = tokenize_expression(content)
+            sample = toks[:40]
+            print(sample)
+        else:
+            print("Input file not available to tokenize.")
+    except Exception as e:
+        print("Tokenization failed:", e)
 
 
 def main():
