@@ -1,0 +1,117 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Lab 2 Report -- Double Buffering, Producer/Consumer, and Benchmarking}
+\author{Compiled by Student}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Abstract}
+This report documents Tasks 1, 2, and 3 from Lab 2. Each task implements and demonstrates approaches for buffered character input, a producer/consumer reading pattern, and a benchmark comparing single- and double-buffered streams. The following sections summarize the implementation, execution observations, and rationale for the chosen approaches.
+
+\section*{Task 1 -- Double Buffering}
+\textbf{Objective:}
+\begin{itemize}
+    \item Implement a simple double-buffered reader that fills two fixed-size buffers and uses a sentinel to detect buffer boundaries.
+\end{itemize}
+
+\textbf{Implementation Steps:}
+\begin{itemize}
+    \item Created \texttt{BufferManager} (in \texttt{task1.py}) with two buffers: \texttt{buffer1} and \texttt{buffer2}.
+    \item On initialization, both buffers are filled from the input file and a sentinel is appended to mark the end of each buffer.
+    \item \texttt{getNextChar()} reads from the current active buffer; when the sentinel is reached, it either stops (EOF) or switches the active buffer and fills the emptied buffer from the file.
+    \item \texttt{switch\_buffer()} resets the \texttt{forward} pointer, fills the other buffer, updates \texttt{active}, and increments \texttt{switch\_count}.
+\end{itemize}
+
+\textbf{Observations:}
+\begin{itemize}
+    \item Program prints contents of each buffer when filled and shows per-character reads as it advances through the active buffer.
+    \item Sentinel detection triggers buffer switching; switch counts are printed at the end.
+\end{itemize}
+
+\textbf{Rationale:}
+\begin{itemize}
+    \item Double buffering allows continuous character consumption without blocking on I/O.
+    \item Using a sentinel simplifies boundary detection: only comparison with sentinel value is needed.
+\end{itemize}
+
+\section*{Task 2 -- Producer / Consumer with Double Buffers}
+\textbf{Objective:}
+\begin{itemize}
+    \item Demonstrate threading with a producer that reads the file and a consumer that scans characters concurrently using the \texttt{BufferManager}.
+\end{itemize}
+
+\textbf{Implementation Steps:}
+\begin{itemize}
+    \item Wrote \texttt{task2.py}, creating a \texttt{BufferManager} and two threads: \texttt{producer} and \texttt{consumer}.
+    \item \texttt{producer} repeatedly calls \texttt{getNextChar()} until EOF to fill buffers from a dedicated thread.
+    \item \texttt{consumer} simulates a scanner: takes characters (protected by a \texttt{lock} around \texttt{getNextChar()} calls) and processes them with a small sleep to emulate work.
+    \item A global \texttt{done} flag signals EOF to the consumer once the producer finishes reading.
+\end{itemize}
+
+\textbf{Observations:}
+\begin{itemize}
+    \item Producer completes reading and prints a completion message.
+    \item Consumer concurrently prints scanned characters; locking ensures safe buffer access.
+    \item Final output includes total buffer switches recorded in the buffer manager.
+\end{itemize}
+
+\textbf{Rationale:}
+\begin{itemize}
+    \item Producer/consumer pattern decouples I/O from processing, improving throughput.
+    \item Using a lock keeps access simple and safe; higher-performance alternatives could use lock-free or finer-grained synchronization.
+\end{itemize}
+
+\section*{Task 3 -- CharStream, SingleBufferStream, and Benchmarking}
+\textbf{Objective:}
+\begin{itemize}
+    \item Implement \texttt{CharStream} (double buffer) with diagnostics, \texttt{SingleBufferStream} for comparison, and a \texttt{benchmark()} to measure performance and buffer fills.
+\end{itemize}
+
+\textbf{Implementation Steps:}
+\begin{itemize}
+    \item Implemented \texttt{CharStream} with explicit buffer offsets, \texttt{absolute\_pos} tracking, \texttt{lexemeBegin} support, and a \texttt{transitions} log capturing buffer switch metadata.
+    \item Implemented \texttt{SingleBufferStream} that refills a single buffer at sentinel detection and measures fill durations.
+    \item Wrote \texttt{benchmark()} to run both streams over the same file and record processing times, average fill times, character counts, and buffer switch counts.
+    \item \texttt{print\_report()} prints a summary and shows a buffer-transition demo highlighting bytes around each buffer switch.
+\end{itemize}
+
+\textbf{Observations:}
+\begin{itemize}
+    \item Benchmarking quantifies single vs. double buffering performance.
+    \item \texttt{transitions} verify lexeme continuity across buffer boundaries.
+    \item Sample tokens show that scanning works correctly on the read content.
+\end{itemize}
+
+\textbf{Rationale:}
+\begin{itemize}
+    \item Comparing single vs. double buffering quantifies the benefit of overlapping I/O and processing.
+    \item Recording fill durations and transition snapshots aids debugging and performance analysis.
+    \item Keeping both implementations together allows direct, repeatable comparison.
+\end{itemize}
+
+\section*{Conclusions and Possible Improvements}
+\begin{itemize}
+    \item Double buffering reduces processing pauses caused by I/O latency.
+    \item Producer/consumer pattern decouples reading from scanning; correct synchronization is crucial for performance and correctness.
+    \item Possible improvements: use lock-free queues, increase buffer size, or employ asynchronous I/O for large files.
+    \item Add unit tests for boundary conditions (small files, exact buffer divisions) to ensure sentinel and switching logic robustness.
+\end{itemize}
+
+\section*{Files Referenced}
+\begin{itemize}
+    \item \texttt{task1.py} -- BufferManager (double buffering example)
+    \item \texttt{task2.py} -- Producer/consumer demonstration using BufferManager
+    \item \texttt{task3.py} -- CharStream, SingleBufferStream, and benchmark/report code
+    \item \texttt{tasksample.cpp} -- Sample input used for tests and benchmarks
+\end{itemize}
+
+\end{document}
