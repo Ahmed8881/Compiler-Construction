@@ -2,7 +2,8 @@ import sys, time, os
 from common import print_tokens
 from approach1_state_based      import StateBased_Lexer
 from approach2_stateless        import Stateless_Lexer
-from approach3_transition_table import TransitionTable_Lexer, CompressedTable_Lexer
+from approach3_transition_table import TransitionTable_Lexer
+from approach4_compressed_table import CompressedTable_Lexer
 
 def run(src):
     approaches = [

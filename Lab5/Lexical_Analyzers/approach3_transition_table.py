@@ -143,26 +143,16 @@ class TransitionTable_Lexer(BaseLexer):
         return _drive(self, lambda s, c: T[s][c])
 
 
-class CompressedTable_Lexer(BaseLexer):
-    _sparse = {(s, c): T[s][c]
-               for s in range(12) for c in range(N)
-               if T[s][c] != ERR}
-
-    def next_token(self):
-        return _drive(self, lambda s, c: self._sparse.get((s, c), ERR))
-
-    @classmethod
-    def stats(cls):
-        total  = 12 * N
-        stored = len(cls._sparse)
-        print(f"  Full table : {total} cells  |  "
-              f"Stored: {stored}  |  "
-              f"Saved: {(1-stored/total)*100:.0f}%\n")
+# CompressedTable_Lexer moved to approach4_compressed_table.py
 
 
 if __name__ == '__main__':
     src = "program test; var x:integer; begin x := 3 + 4 end."
     print_tokens(TransitionTable_Lexer(src).tokenize_all(), "Approach 3 — Transition Table")
-    print("── Bonus: Compressed Table ──")
-    CompressedTable_Lexer.stats()
-    print_tokens(CompressedTable_Lexer(src).tokenize_all(), "Bonus — Compressed Table")
+    try:
+        from approach4_compressed_table import CompressedTable_Lexer
+        print("── Bonus: Compressed Table ──")
+        CompressedTable_Lexer.stats()
+        print_tokens(CompressedTable_Lexer(src).tokenize_all(), "Bonus — Compressed Table")
+    except Exception:
+        pass
