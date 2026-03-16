@@ -13,59 +13,12 @@ def cc(ch):
         '{':19, '}':20,
     }.get(ch, 21)          
 
-N = 22
-(S,   ID,  INT,  FRAC,
- EXPS, EXPSN, EXP,
- CMT, COL, LT,  GT,  DOT) = range(12)
-(A_ID,  A_INT, A_REAL,
- A_ASSIGN, A_COLON,
- A_EQ,  A_LT,  A_LE,  A_NE,  A_GT,  A_GE,
- A_PLUS, A_MINUS, A_STAR, A_SLASH,
- A_LPAR, A_RPAR, A_LBRK, A_RBRK,
- A_SEMI, A_COMMA,
- A_DOT,  A_DOTDOT, A_EOF) = range(100, 124)
-ERR = 200  
+N = 22; (S, ID, INT, FRAC, EXPS, EXPSN, EXP, CMT, COL, LT, GT, DOT) = range(12); (A_ID, A_INT, A_REAL, A_ASSIGN, A_COLON, A_EQ, A_LT, A_LE, A_NE, A_GT, A_GE, A_PLUS, A_MINUS, A_STAR, A_SLASH, A_LPAR, A_RPAR, A_LBRK, A_RBRK, A_SEMI, A_COMMA, A_DOT, A_DOTDOT, A_EOF) = range(100, 124); ERR = 200
 
-T = [[ERR]*N for _ in range(12)]  
-
-T[S]    = [A_EOF,A_EOF,ERR,ERR,A_PLUS,A_MINUS,A_STAR,A_SLASH,
-           A_EQ, LT,  GT,  COL, DOT,
-           A_LPAR,A_RPAR,A_LBRK,A_RBRK,A_SEMI,A_COMMA,CMT, ERR, ERR]
-T[S][1] = ERR  
-T[S][2] = ID    
-T[S][1] = ID   
-T[S][3] = INT   
-
-for cls in (1, 2, 3):   T[ID][cls] = ID
-
-T[INT][3]  = INT   
-T[INT][12] = FRAC  
-T[INT][1]  = EXPS 
-
-T[FRAC][3] = FRAC
-T[FRAC][1] = EXPS
-
-T[EXPS][4]  = EXPSN 
-T[EXPS][5]  = EXPSN   
-T[EXPS][3]  = EXP
-
-T[EXPSN][3] = EXP
-
-T[EXP][3] = EXP
-
-for cls in range(N):   T[CMT][cls] = CMT
-T[CMT][20] = S   
-T[CMT][19] = ERR    
-T[CMT][0]  = ERR   
-
-T[COL][8] = A_ASSIGN
-
-T[LT][8]  = A_LE
-T[LT][10] = A_NE
-
-T[GT][8] = A_GE
-
-T[DOT][12] = A_DOTDOT
+T = [[ERR]*N for _ in range(12)]
+T[S]=[A_EOF,A_EOF,ERR,ERR,A_PLUS,A_MINUS,A_STAR,A_SLASH,A_EQ,LT,GT,COL,DOT,A_LPAR,A_RPAR,A_LBRK,A_RBRK,A_SEMI,A_COMMA,CMT,ERR,ERR]; T[S][1]=ERR; T[S][2]=ID; T[S][1]=ID; T[S][3]=INT; 
+for cls in (1,2,3): T[ID][cls]=ID; T[INT][3]=INT; T[INT][12]=FRAC; T[INT][1]=EXPS; T[FRAC][3]=FRAC; T[FRAC][1]=EXPS; T[EXPS][4]=EXPSN; T[EXPS][5]=EXPSN; T[EXPS][3]=EXP; T[EXPSN][3]=EXP; T[EXP][3]=EXP; 
+for cls in range(N): T[CMT][cls]=CMT; T[CMT][20]=S; T[CMT][19]=ERR; T[CMT][0]=ERR; T[COL][8]=A_ASSIGN; T[LT][8]=A_LE; T[LT][10]=A_NE; T[GT][8]=A_GE; T[DOT][12]=A_DOTDOT
 
 RETRACT = {ID:A_ID, INT:A_INT, FRAC:A_REAL, EXP:A_REAL,
            COL:A_COLON, LT:A_LT, GT:A_GT, DOT:A_DOT}
@@ -91,12 +44,7 @@ def _make_token(ac, lexeme, line):
     return Token(tt, lex, line=line)
 
 
-
 def _drive(lexer, lookup):
-    """
-    lookup(state, char_class) → next_state
-    This same function drives both the full-table and compressed-table lexers.
-    """
     lexer.skip()                  
     state  = S
     lexeme = ''
@@ -137,14 +85,9 @@ def _drive(lexer, lookup):
             lexer.skip()
             line = lexer.line
 
-
 class TransitionTable_Lexer(BaseLexer):
     def next_token(self):
         return _drive(self, lambda s, c: T[s][c])
-
-
-# CompressedTable_Lexer moved to approach4_compressed_table.py
-
 
 if __name__ == '__main__':
     src = "program test; var x:integer; begin x := 3 + 4 end."
