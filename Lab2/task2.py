@@ -9,7 +9,8 @@ done = False
 def producer(bm):
     global done
     while True:
-        ch = bm.getNextChar()
+        with lock:
+            ch = bm.getNextChar()
         if ch is None:
             break
         time.sleep(0.01)

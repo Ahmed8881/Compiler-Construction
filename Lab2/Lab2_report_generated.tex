@@ -1,0 +1,6537 @@
+
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{Lab 2 Report -- Double Buffering, Producer/Consumer, and Benchmarking (Generated)}
+\author{Compiled by Student}
+\date{\today}
+\begin{document}
+\maketitle
+\section*{Summary}
+This report contains source code for the multi-threaded buffer implementation, performance comparison results between single-buffer and double-buffer approaches, and test results on files of varying sizes.
+
+\section*{Source Code: Multi-threaded Buffer Implementation}
+The following is the `task2.py` producer/consumer implementation used in this lab.
+
+\begin{verbatim}
+from task1 import BufferManager
+import threading
+import time
+
+
+lock = threading.Lock()
+done = False  
+
+def producer(bm):
+    global done
+    while True:
+        ch = bm.getNextChar()
+        if ch is None:
+            break
+        time.sleep(0.01)
+    done = True  # EOF reached
+    print("\n*** Producer finished reading file ***")
+
+def consumer(bm):
+    global done
+    print("\nScanner started\n")
+    while True:
+        with lock:
+            ch = bm.getNextChar()
+        if ch is None:
+            if done:
+                break
+            else:
+                continue
+        print("Scanned ->", repr(ch))
+        time.sleep(0.02)  
+
+
+def main():
+    bm = BufferManager("tasksampel.cpp", buffer_size=8)
+    t1 = threading.Thread(target=producer, args=(bm,))
+    t2 = threading.Thread(target=consumer, args=(bm,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    print("\nDone (Task 2 with double buffers)")
+    print("Total buffer switches:", bm.switch_count)
+
+if __name__ == "__main__":
+    main()
+\end{verbatim}
+
+\section*{Benchmark Configuration and Results}
+The benchmarks were run using `task3.py`'s `benchmark()` function with a buffer size of 4096 bytes. Results below list times (ms), average fill durations, and measured improvements.
+
+\begin{tabular}{lrrrrr}
+\hline
+File & Size (bytes) & Single ms & Double ms & FillAvg single(ms) & FillAvg double(ms)\\
+\hline
+C:\Users\User\Desktop\Compiler-Construction\Lab2\sample_small.cpp & 1068 & 0.167 & 0.221 & 0.0382 & 0.0206\\
+C:\Users\User\Desktop\Compiler-Construction\Lab2\sample_medium.cpp & 53426 & 12.454 & 12.370 & 0.0460 & 0.0357\\
+C:\Users\User\Desktop\Compiler-Construction\Lab2\sample_large.cpp & 1094166 & 186.749 & 252.958 & 0.0395 & 0.0217\\
+\hline
+\end{tabular}
+
+\section*{Detailed Results (JSON)}
+\begin{verbatim}
+[
+  {
+    "buffer_size": 4096,
+    "total_file_size": 1068,
+    "filename": "C:\\Users\\User\\Desktop\\Compiler-Construction\\Lab2\\sample_small.cpp",
+    "chars_processed": 1024,
+    "single_time_ms": 0.1674000000093656,
+    "double_time_ms": 0.22080000007917988,
+    "single_fill_avg_ms": 0.038249999761319486,
+    "double_fill_avg_ms": 0.020599999970727367,
+    "buffer_switches": 0,
+    "transitions": []
+  },
+  {
+    "buffer_size": 4096,
+    "total_file_size": 53426,
+    "filename": "C:\\Users\\User\\Desktop\\Compiler-Construction\\Lab2\\sample_medium.cpp",
+    "chars_processed": 51200,
+    "single_time_ms": 12.454399999569432,
+    "double_time_ms": 12.370400000236259,
+    "single_fill_avg_ms": 0.046000000013788976,
+    "double_fill_avg_ms": 0.035742857042870516,
+    "buffer_switches": 12,
+    "transitions": [
+      {
+        "switch_at_absolute": 4096,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.011999999969702912
+      },
+      {
+        "switch_at_absolute": 8192,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.03199999991920777
+      },
+      {
+        "switch_at_absolute": 12288,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.009899999895424116
+      },
+      {
+        "switch_at_absolute": 16384,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.028200000087963417
+      },
+      {
+        "switch_at_absolute": 20480,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.009500000032858225
+      },
+      {
+        "switch_at_absolute": 24576,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.09959999988495838
+      },
+      {
+        "switch_at_absolute": 28672,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.0144999999065476
+      },
+      {
+        "switch_at_absolute": 32768,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.05919999966863543
+      },
+      {
+        "switch_at_absolute": 36864,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.010600000223348616
+      },
+      {
+        "switch_at_absolute": 40960,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.11859999995067483
+      },
+      {
+        "switch_at_absolute": 45056,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.030499999866151484
+      },
+      {
+        "switch_at_absolute": 49152,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.011199999789823778
+      }
+    ]
+  },
+  {
+    "buffer_size": 4096,
+    "total_file_size": 1094166,
+    "filename": "C:\\Users\\User\\Desktop\\Compiler-Construction\\Lab2\\sample_large.cpp",
+    "chars_processed": 1048576,
+    "single_time_ms": 186.7485999996461,
+    "double_time_ms": 252.958199999739,
+    "single_fill_avg_ms": 0.039475097279979374,
+    "double_fill_avg_ms": 0.021659143987088646,
+    "buffer_switches": 255,
+    "transitions": [
+      {
+        "switch_at_absolute": 4096,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.00940000018090359
+      },
+      {
+        "switch_at_absolute": 8192,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.0227999998969608
+      },
+      {
+        "switch_at_absolute": 12288,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.008799999704933725
+      },
+      {
+        "switch_at_absolute": 16384,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.02210000002378365
+      },
+      {
+        "switch_at_absolute": 20480,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.00869999985297909
+      },
+      {
+        "switch_at_absolute": 24576,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.021599999854515772
+      },
+      {
+        "switch_at_absolute": 28672,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 32768,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.02229999972769292
+      },
+      {
+        "switch_at_absolute": 36864,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 40960,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.02049999966402538
+      },
+      {
+        "switch_at_absolute": 45056,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 49152,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.02189999986512703
+      },
+      {
+        "switch_at_absolute": 53248,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.009299999874201603
+      },
+      {
+        "switch_at_absolute": 57344,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.02479999966453761
+      },
+      {
+        "switch_at_absolute": 61440,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.009100000170292333
+      },
+      {
+        "switch_at_absolute": 65536,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.022000000171829015
+      },
+      {
+        "switch_at_absolute": 69632,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 73728,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.02099999983329326
+      },
+      {
+        "switch_at_absolute": 77824,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 81920,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.02170000016121776
+      },
+      {
+        "switch_at_absolute": 86016,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 90112,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.02099999983329326
+      },
+      {
+        "switch_at_absolute": 94208,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.02119999999194988
+      },
+      {
+        "switch_at_absolute": 98304,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 102400,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.02170000016121776
+      },
+      {
+        "switch_at_absolute": 106496,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.010400000064691994
+      },
+      {
+        "switch_at_absolute": 110592,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.021100000139995245
+      },
+      {
+        "switch_at_absolute": 114688,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 118784,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.02190000031987438
+      },
+      {
+        "switch_at_absolute": 122880,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.00940000018090359
+      },
+      {
+        "switch_at_absolute": 126976,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.021500000002561137
+      },
+      {
+        "switch_at_absolute": 131072,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.009000000318337698
+      },
+      {
+        "switch_at_absolute": 135168,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.021800000013172394
+      },
+      {
+        "switch_at_absolute": 139264,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 143360,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.023400000372930663
+      },
+      {
+        "switch_at_absolute": 147456,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.008800000159681076
+      },
+      {
+        "switch_at_absolute": 151552,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.02170000016121776
+      },
+      {
+        "switch_at_absolute": 155648,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.008800000159681076
+      },
+      {
+        "switch_at_absolute": 159744,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.11959999983446323
+      },
+      {
+        "switch_at_absolute": 163840,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.023399999918183312
+      },
+      {
+        "switch_at_absolute": 167936,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.035600000046542846
+      },
+      {
+        "switch_at_absolute": 172032,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.009399999726156238
+      },
+      {
+        "switch_at_absolute": 176128,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.024500000108673703
+      },
+      {
+        "switch_at_absolute": 180224,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.009800000043469481
+      },
+      {
+        "switch_at_absolute": 184320,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.0227999998969608
+      },
+      {
+        "switch_at_absolute": 188416,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.02139999969585915
+      },
+      {
+        "switch_at_absolute": 192512,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.009500000032858225
+      },
+      {
+        "switch_at_absolute": 196608,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.02210000002378365
+      },
+      {
+        "switch_at_absolute": 200704,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.012700000297627412
+      },
+      {
+        "switch_at_absolute": 204800,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.03459999970800709
+      },
+      {
+        "switch_at_absolute": 208896,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.009899999895424116
+      },
+      {
+        "switch_at_absolute": 212992,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.02700000004551839
+      },
+      {
+        "switch_at_absolute": 217088,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.010100000054080738
+      },
+      {
+        "switch_at_absolute": 221184,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.02480000011928496
+      },
+      {
+        "switch_at_absolute": 225280,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.016800000139483018
+      },
+      {
+        "switch_at_absolute": 229376,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.04239999998389976
+      },
+      {
+        "switch_at_absolute": 233472,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.010100000054080738
+      },
+      {
+        "switch_at_absolute": 237568,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.024400000256719068
+      },
+      {
+        "switch_at_absolute": 241664,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 245760,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.023600000076839933
+      },
+      {
+        "switch_at_absolute": 249856,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 253952,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.022599999738304177
+      },
+      {
+        "switch_at_absolute": 258048,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 262144,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.02210000002378365
+      },
+      {
+        "switch_at_absolute": 266240,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.010400000064691994
+      },
+      {
+        "switch_at_absolute": 270336,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.19190000011803932
+      },
+      {
+        "switch_at_absolute": 274432,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.01629999997021514
+      },
+      {
+        "switch_at_absolute": 278528,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.0463000001218461
+      },
+      {
+        "switch_at_absolute": 282624,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.025400000140507473
+      },
+      {
+        "switch_at_absolute": 286720,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.01049999991664663
+      },
+      {
+        "switch_at_absolute": 290816,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.02369999992879457
+      },
+      {
+        "switch_at_absolute": 294912,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 299008,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.023300000066228677
+      },
+      {
+        "switch_at_absolute": 303104,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.010199999906035373
+      },
+      {
+        "switch_at_absolute": 307200,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.022400000034394907
+      },
+      {
+        "switch_at_absolute": 311296,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.009299999874201603
+      },
+      {
+        "switch_at_absolute": 315392,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.022199999875738285
+      },
+      {
+        "switch_at_absolute": 319488,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.009100000170292333
+      },
+      {
+        "switch_at_absolute": 323584,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.02429999995001708
+      },
+      {
+        "switch_at_absolute": 327680,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 331776,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.022000000171829015
+      },
+      {
+        "switch_at_absolute": 335872,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 339968,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.022499999886349542
+      },
+      {
+        "switch_at_absolute": 344064,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.01250000013897079
+      },
+      {
+        "switch_at_absolute": 348160,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.034300000152143184
+      },
+      {
+        "switch_at_absolute": 352256,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.011100000392616494
+      },
+      {
+        "switch_at_absolute": 356352,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.04540000009001233
+      },
+      {
+        "switch_at_absolute": 360448,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.009100000170292333
+      },
+      {
+        "switch_at_absolute": 364544,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.022500000341096893
+      },
+      {
+        "switch_at_absolute": 368640,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.009299999874201603
+      },
+      {
+        "switch_at_absolute": 372736,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.02100000028804061
+      },
+      {
+        "switch_at_absolute": 376832,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.02210000002378365
+      },
+      {
+        "switch_at_absolute": 380928,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.009000000318337698
+      },
+      {
+        "switch_at_absolute": 385024,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.027100000352220377
+      },
+      {
+        "switch_at_absolute": 389120,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 393216,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.022199999875738285
+      },
+      {
+        "switch_at_absolute": 397312,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.010300000212737359
+      },
+      {
+        "switch_at_absolute": 401408,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.02210000002378365
+      },
+      {
+        "switch_at_absolute": 405504,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 409600,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.02189999986512703
+      },
+      {
+        "switch_at_absolute": 413696,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 417792,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.06809999968027114
+      },
+      {
+        "switch_at_absolute": 421888,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.011800000265793642
+      },
+      {
+        "switch_at_absolute": 425984,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.030900000183464726
+      },
+      {
+        "switch_at_absolute": 430080,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 434176,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.02480000011928496
+      },
+      {
+        "switch_at_absolute": 438272,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.009000000318337698
+      },
+      {
+        "switch_at_absolute": 442368,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.024200000098062446
+      },
+      {
+        "switch_at_absolute": 446464,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 450560,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.023399999918183312
+      },
+      {
+        "switch_at_absolute": 454656,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.009699999736767495
+      },
+      {
+        "switch_at_absolute": 458752,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.027600000066740904
+      },
+      {
+        "switch_at_absolute": 462848,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.011900000117748277
+      },
+      {
+        "switch_at_absolute": 466944,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.0328000000990869
+      },
+      {
+        "switch_at_absolute": 471040,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.03199999991920777
+      },
+      {
+        "switch_at_absolute": 475136,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.013000000308238668
+      },
+      {
+        "switch_at_absolute": 479232,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.03190000006725313
+      },
+      {
+        "switch_at_absolute": 483328,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.016899999991437653
+      },
+      {
+        "switch_at_absolute": 487424,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.03860000015265541
+      },
+      {
+        "switch_at_absolute": 491520,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.014500000361294951
+      },
+      {
+        "switch_at_absolute": 495616,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.04870000020673615
+      },
+      {
+        "switch_at_absolute": 499712,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.019099999917671084
+      },
+      {
+        "switch_at_absolute": 503808,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.055500000144093065
+      },
+      {
+        "switch_at_absolute": 507904,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.026500000330997864
+      },
+      {
+        "switch_at_absolute": 512000,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.05650000002788147
+      },
+      {
+        "switch_at_absolute": 516096,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.011900000117748277
+      },
+      {
+        "switch_at_absolute": 520192,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.028699999802483944
+      },
+      {
+        "switch_at_absolute": 524288,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.0113999999484804
+      },
+      {
+        "switch_at_absolute": 528384,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.02569999969637138
+      },
+      {
+        "switch_at_absolute": 532480,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.009300000328948954
+      },
+      {
+        "switch_at_absolute": 536576,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.034899999718618346
+      },
+      {
+        "switch_at_absolute": 540672,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.009100000170292333
+      },
+      {
+        "switch_at_absolute": 544768,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.02519999998185085
+      },
+      {
+        "switch_at_absolute": 548864,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.010299999757990008
+      },
+      {
+        "switch_at_absolute": 552960,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.031099999887373997
+      },
+      {
+        "switch_at_absolute": 557056,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.01359999987471383
+      },
+      {
+        "switch_at_absolute": 561152,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.030100000003585592
+      },
+      {
+        "switch_at_absolute": 565248,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.031200000194075983
+      },
+      {
+        "switch_at_absolute": 569344,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.012200000128359534
+      },
+      {
+        "switch_at_absolute": 573440,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.029099999665049836
+      },
+      {
+        "switch_at_absolute": 577536,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.0113999999484804
+      },
+      {
+        "switch_at_absolute": 581632,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.027099999897473026
+      },
+      {
+        "switch_at_absolute": 585728,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.0113999999484804
+      },
+      {
+        "switch_at_absolute": 589824,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.02300000005561742
+      },
+      {
+        "switch_at_absolute": 593920,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.009300000328948954
+      },
+      {
+        "switch_at_absolute": 598016,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.04749999970954377
+      },
+      {
+        "switch_at_absolute": 602112,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.010400000064691994
+      },
+      {
+        "switch_at_absolute": 606208,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.02499999982319423
+      },
+      {
+        "switch_at_absolute": 610304,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.010100000054080738
+      },
+      {
+        "switch_at_absolute": 614400,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.028100000236008782
+      },
+      {
+        "switch_at_absolute": 618496,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.012699999842880061
+      },
+      {
+        "switch_at_absolute": 622592,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.033200000416400144
+      },
+      {
+        "switch_at_absolute": 626688,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.013800000033370452
+      },
+      {
+        "switch_at_absolute": 630784,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.03569999989849748
+      },
+      {
+        "switch_at_absolute": 634880,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.012900000001536682
+      },
+      {
+        "switch_at_absolute": 638976,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.030500000320898835
+      },
+      {
+        "switch_at_absolute": 643072,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.012800000149582047
+      },
+      {
+        "switch_at_absolute": 647168,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.031199999739328632
+      },
+      {
+        "switch_at_absolute": 651264,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.011099999937869143
+      },
+      {
+        "switch_at_absolute": 655360,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.04540000009001233
+      },
+      {
+        "switch_at_absolute": 659456,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.027400000362831634
+      },
+      {
+        "switch_at_absolute": 663552,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.01159999965238967
+      },
+      {
+        "switch_at_absolute": 667648,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.04080000007888884
+      },
+      {
+        "switch_at_absolute": 671744,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.013800000033370452
+      },
+      {
+        "switch_at_absolute": 675840,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.03569999989849748
+      },
+      {
+        "switch_at_absolute": 679936,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.015000000075815478
+      },
+      {
+        "switch_at_absolute": 684032,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.06789999997636187
+      },
+      {
+        "switch_at_absolute": 688128,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.018400000044493936
+      },
+      {
+        "switch_at_absolute": 692224,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.04600000011123484
+      },
+      {
+        "switch_at_absolute": 696320,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.015999999959603883
+      },
+      {
+        "switch_at_absolute": 700416,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.028899999961140566
+      },
+      {
+        "switch_at_absolute": 704512,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.010400000064691994
+      },
+      {
+        "switch_at_absolute": 708608,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.037600000268867007
+      },
+      {
+        "switch_at_absolute": 712704,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.012399999832268804
+      },
+      {
+        "switch_at_absolute": 716800,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.050999999984924216
+      },
+      {
+        "switch_at_absolute": 720896,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.01049999991664663
+      },
+      {
+        "switch_at_absolute": 724992,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.032899999951041536
+      },
+      {
+        "switch_at_absolute": 729088,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.01050000037139398
+      },
+      {
+        "switch_at_absolute": 733184,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.09110000019063591
+      },
+      {
+        "switch_at_absolute": 737280,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.014100000043981709
+      },
+      {
+        "switch_at_absolute": 741376,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.02880000010918593
+      },
+      {
+        "switch_at_absolute": 745472,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.009299999874201603
+      },
+      {
+        "switch_at_absolute": 749568,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.028500000098574674
+      },
+      {
+        "switch_at_absolute": 753664,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.03100000003541936
+      },
+      {
+        "switch_at_absolute": 757760,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.013500000022759195
+      },
+      {
+        "switch_at_absolute": 761856,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.04129999979340937
+      },
+      {
+        "switch_at_absolute": 765952,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.01610000026630587
+      },
+      {
+        "switch_at_absolute": 770048,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.03910000032192329
+      },
+      {
+        "switch_at_absolute": 774144,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.01539999993838137
+      },
+      {
+        "switch_at_absolute": 778240,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.04910000006930204
+      },
+      {
+        "switch_at_absolute": 782336,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.01249999968422344
+      },
+      {
+        "switch_at_absolute": 786432,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.029799999992974335
+      },
+      {
+        "switch_at_absolute": 790528,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.010700000075303251
+      },
+      {
+        "switch_at_absolute": 794624,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.025899999855028
+      },
+      {
+        "switch_at_absolute": 798720,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.009300000328948954
+      },
+      {
+        "switch_at_absolute": 802816,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.022200000330485636
+      },
+      {
+        "switch_at_absolute": 806912,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.009000000318337698
+      },
+      {
+        "switch_at_absolute": 811008,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.023300000066228677
+      },
+      {
+        "switch_at_absolute": 815104,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.010099999599333387
+      },
+      {
+        "switch_at_absolute": 819200,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.022400000034394907
+      },
+      {
+        "switch_at_absolute": 823296,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 827392,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.022700000045006163
+      },
+      {
+        "switch_at_absolute": 831488,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.008999999863590347
+      },
+      {
+        "switch_at_absolute": 835584,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.02519999998185085
+      },
+      {
+        "switch_at_absolute": 839680,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.015100000382517464
+      },
+      {
+        "switch_at_absolute": 843776,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.04360000002634479
+      },
+      {
+        "switch_at_absolute": 847872,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.04780000017490238
+      },
+      {
+        "switch_at_absolute": 851968,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.010000000202126103
+      },
+      {
+        "switch_at_absolute": 856064,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.03240000023652101
+      },
+      {
+        "switch_at_absolute": 860160,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.009300000328948954
+      },
+      {
+        "switch_at_absolute": 864256,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.02500000027794158
+      },
+      {
+        "switch_at_absolute": 868352,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.010000000202126103
+      },
+      {
+        "switch_at_absolute": 872448,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.02499999982319423
+      },
+      {
+        "switch_at_absolute": 876544,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.011000000085914508
+      },
+      {
+        "switch_at_absolute": 880640,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.03389999983482994
+      },
+      {
+        "switch_at_absolute": 884736,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.013000000308238668
+      },
+      {
+        "switch_at_absolute": 888832,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.03409999999348656
+      },
+      {
+        "switch_at_absolute": 892928,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.014100000043981709
+      },
+      {
+        "switch_at_absolute": 897024,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.03389999983482994
+      },
+      {
+        "switch_at_absolute": 901120,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.013500000022759195
+      },
+      {
+        "switch_at_absolute": 905216,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.030000000151630957
+      },
+      {
+        "switch_at_absolute": 909312,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.013899999885325087
+      },
+      {
+        "switch_at_absolute": 913408,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.029599999834317714
+      },
+      {
+        "switch_at_absolute": 917504,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.010100000054080738
+      },
+      {
+        "switch_at_absolute": 921600,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.022900000203662785
+      },
+      {
+        "switch_at_absolute": 925696,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.010199999906035373
+      },
+      {
+        "switch_at_absolute": 929792,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.022199999875738285
+      },
+      {
+        "switch_at_absolute": 933888,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 937984,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.02080000012938399
+      },
+      {
+        "switch_at_absolute": 942080,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.021500000002561137
+      },
+      {
+        "switch_at_absolute": 946176,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 950272,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.022499999886349542
+      },
+      {
+        "switch_at_absolute": 954368,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "new_head": [
+          "{",
+          "\n",
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "fill_time_ms": 0.008799999704933725
+      },
+      {
+        "switch_at_absolute": 958464,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "new_head": [
+          " ",
+          "<",
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "fill_time_ms": 0.0227999998969608
+      },
+      {
+        "switch_at_absolute": 962560,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "new_head": [
+          " ",
+          " ",
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "fill_time_ms": 0.010599999768601265
+      },
+      {
+        "switch_at_absolute": 966656,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "fill_time_ms": 0.022700000045006163
+      },
+      {
+        "switch_at_absolute": 970752,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          " ",
+          " ",
+          " ",
+          "c",
+          "o"
+        ],
+        "new_head": [
+          "u",
+          "t",
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 974848,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "o",
+          "s",
+          "t",
+          "r",
+          "e"
+        ],
+        "new_head": [
+          "a",
+          "m",
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "fill_time_ms": 0.020599999970727367
+      },
+      {
+        "switch_at_absolute": 978944,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "c",
+          "o",
+          "u",
+          "t",
+          " ",
+          "<"
+        ],
+        "new_head": [
+          "<",
+          " ",
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "fill_time_ms": 0.010299999757990008
+      },
+      {
+        "switch_at_absolute": 983040,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "r",
+          "e",
+          "a",
+          "m",
+          ">",
+          "\n"
+        ],
+        "new_head": [
+          "u",
+          "s",
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "fill_time_ms": 0.024499999653926352
+      },
+      {
+        "switch_at_absolute": 987136,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          " ",
+          "<",
+          "<",
+          " ",
+          "\"",
+          "H"
+        ],
+        "new_head": [
+          "e",
+          "l",
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "fill_time_ms": 0.009299999874201603
+      },
+      {
+        "switch_at_absolute": 991232,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          ">",
+          "\n",
+          "u",
+          "s",
+          "i",
+          "n"
+        ],
+        "new_head": [
+          "g",
+          " ",
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "fill_time_ms": 0.02189999986512703
+      },
+      {
+        "switch_at_absolute": 995328,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\"",
+          "H",
+          "e",
+          "l",
+          "l",
+          "o"
+        ],
+        "new_head": [
+          ",",
+          " ",
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "fill_time_ms": 0.00940000018090359
+      },
+      {
+        "switch_at_absolute": 999424,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "i",
+          "n",
+          "g",
+          " ",
+          "n",
+          "a"
+        ],
+        "new_head": [
+          "m",
+          "e",
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "fill_time_ms": 0.022199999875738285
+      },
+      {
+        "switch_at_absolute": 1003520,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "l",
+          "o",
+          ",",
+          " ",
+          "W",
+          "o"
+        ],
+        "new_head": [
+          "r",
+          "l",
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "fill_time_ms": 0.009099999715544982
+      },
+      {
+        "switch_at_absolute": 1007616,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "a",
+          "m",
+          "e",
+          "s",
+          "p"
+        ],
+        "new_head": [
+          "a",
+          "c",
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "fill_time_ms": 0.021299999843904516
+      },
+      {
+        "switch_at_absolute": 1011712,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "W",
+          "o",
+          "r",
+          "l",
+          "d",
+          "!"
+        ],
+        "new_head": [
+          "\"",
+          " ",
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "fill_time_ms": 0.009200000022246968
+      },
+      {
+        "switch_at_absolute": 1015808,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "s",
+          "p",
+          "a",
+          "c",
+          "e",
+          " "
+        ],
+        "new_head": [
+          "s",
+          "t",
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "fill_time_ms": 0.020699999822682003
+      },
+      {
+        "switch_at_absolute": 1019904,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "d",
+          "!",
+          "\"",
+          " ",
+          "<",
+          "<"
+        ],
+        "new_head": [
+          " ",
+          "e",
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "fill_time_ms": 0.008900000011635711
+      },
+      {
+        "switch_at_absolute": 1024000,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "e",
+          " ",
+          "s",
+          "t",
+          "d",
+          ";"
+        ],
+        "new_head": [
+          "\n",
+          "i",
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "fill_time_ms": 0.02300000005561742
+      },
+      {
+        "switch_at_absolute": 1028096,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "<",
+          "<",
+          " ",
+          "e",
+          "n",
+          "d"
+        ],
+        "new_head": [
+          "l",
+          ";",
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "fill_time_ms": 0.00869999985297909
+      },
+      {
+        "switch_at_absolute": 1032192,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "d",
+          ";",
+          "\n",
+          "i",
+          "n",
+          "t"
+        ],
+        "new_head": [
+          " ",
+          "m",
+          "a",
+          "i",
+          "n",
+          "(",
+          ")",
+          " "
+        ],
+        "fill_time_ms": 0.020700000277429353
+      },
+      {
+        "switch_at_absolute": 1036288,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "n",
+          "d",
+          "l",
+          ";",
+          "\n",
+          "}"
+        ],
+        "new_head": [
+          "#",
+          "i",
+          "n",
+          "c",
+          "l",
+          "u",
+          "d",
+          "e"
+        ],
+        "fill_time_ms": 0.04269999999451102
+      },
+      {
+        "switch_at_absolute": 1040384,
+        "old_active": 2,
+        "new_active": 1,
+        "old_tail": [
+          "n",
+          "t",
+          " ",
+          "m",
+          "a",
+          "i"
+        ],
+        "new_head": [
+          "n",
+          "(",
+          ")",
+          " ",
+          "{",
+          "\n",
+          " ",
+          " "
+        ],
+        "fill_time_ms": 0.009499999578110874
+      },
+      {
+        "switch_at_absolute": 1044480,
+        "old_active": 1,
+        "new_active": 2,
+        "old_tail": [
+          "\n",
+          "}",
+          "#",
+          "i",
+          "n",
+          "c"
+        ],
+        "new_head": [
+          "l",
+          "u",
+          "d",
+          "e",
+          " ",
+          "<",
+          "i",
+          "o"
+        ],
+        "fill_time_ms": 0.006799999937356915
+      }
+    ]
+  }
+]\end{verbatim}
+
+
+\section*{Conclusions}
+Double buffering generally reduces pauses due to I/O and can improve throughput; results below quantify the effect for the tested files and configuration.
+\end{document}
