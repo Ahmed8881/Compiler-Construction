@@ -1,29 +1,15 @@
-import sys, time
+import sys, time, os
 from common import print_tokens
 from approach1_state_based      import StateBased_Lexer
 from approach2_stateless        import Stateless_Lexer
 from approach3_transition_table import TransitionTable_Lexer, CompressedTable_Lexer
-
-GCD_SAMPLE = """\
-program example(input, output);
-var x, y: integer;
-function gcd(a, b: integer): integer;
-begin
-    if b = 0 then gcd := a
-    else gcd := gcd(b, a mod b)
-end;
-begin
-    read(x, y);
-    write(gcd(x, y))
-end.
-"""
 
 def run(src):
     approaches = [
         ("Approach 1 — State-Based DFA",  StateBased_Lexer),
         ("Approach 2 — Stateless",        Stateless_Lexer),
         ("Approach 3 — Transition Table", TransitionTable_Lexer),
-        ("Bonus     — Compressed Table",  CompressedTable_Lexer),
+        ("Approach 4 — Compressed Table",  CompressedTable_Lexer),
     ]
 
     print(f"\n{'█'*56}")
@@ -59,5 +45,12 @@ def run(src):
 
 
 if __name__ == '__main__':
-    src = open(sys.argv[1]).read() if len(sys.argv) > 1 else GCD_SAMPLE
+    if len(sys.argv) > 1:
+        src = open(sys.argv[1]).read()
+    else:
+        default_path = os.path.join(os.path.dirname(__file__), 'gcd.pas')
+        if os.path.exists(default_path):
+            src = open(default_path).read()
+        else:
+            src = GCD_SAMPLE
     run(src)
