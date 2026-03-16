@@ -1,243 +1,225 @@
-# ============================================================
+# ──────────────────────────────────────────────────────────────
 # approach3_transition_table.py  —  Table-driven DFA
-# ============================================================
-# How it works:
-#   A 2-D table  TABLE[state][char_class] = next_state
-#   is built once at import time.  The driver loop just reads
-#   characters, classifies them, and does a table lookup.
-#   No if/elif logic inside the loop itself.
+# ──────────────────────────────────────────────────────────────
+# Idea: store ALL transitions in a 2-D table.
+#   table[current_state][char_class] = next_state
+# The driver loop just reads a character, looks up the table,
+# and moves to the next state — NO if/elif logic inside loop.
 #
-# BONUS: CompressedTable_Lexer stores only the non-error cells
-#        in a dict — same result, less memory.
-# ============================================================
+# BONUS: CompressedTable_Lexer keeps only the non-error cells
+#        in a dictionary — same result but uses less memory.
+# ──────────────────────────────────────────────────────────────
 
-from common import (BaseLexer, Token, LexicalError, classify_word,
-                    TT_NUM, TT_ASSIGNOP, TT_RELOP, TT_ADDOP, TT_MULOP,
-                    TT_LPAREN, TT_RPAREN, TT_LBRACKET, TT_RBRACKET,
-                    TT_SEMICOLON, TT_COMMA, TT_COLON,
-                    TT_DOT, TT_DOTDOT, TT_EOF, print_tokens)
+from common import *
 
-# ── Character classes (columns of the table) ─────────────────
-(CC_LETTER, CC_DIGIT, CC_E,
- CC_PLUS, CC_MINUS, CC_STAR, CC_SLASH,
- CC_EQ, CC_LT, CC_GT, CC_COLON, CC_DOT,
- CC_LPAREN, CC_RPAREN, CC_LBRACK, CC_RBRACK,
- CC_SEMI, CC_COMMA,
- CC_LBRACE, CC_RBRACE,
- CC_OTHER, CC_EOF) = range(22)
+# ── Step 1: give every character a class number ───────────────
+#    (this replaces a big if/elif chain inside the loop)
 
-def char_class(ch):
-    if ch == '':          return CC_EOF
-    if ch in ('E','e'):   return CC_E       # also a letter, handled first
-    if ch.isalpha() or ch == '_': return CC_LETTER
-    if ch.isdigit():      return CC_DIGIT
+CC = {ch: i for i, ch in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdfghjklmnopqrstuvwxyz_', 0)}
+# Simpler approach: classify on-the-fly with a function
+
+def cc(ch):
+    """Map one character to a small integer (character class)."""
+    if ch == '':          return 0   # EOF
+    if ch in ('E','e'):   return 1   # exponent letter (also a letter)
+    if ch.isalpha() or ch == '_': return 2   # letter
+    if ch.isdigit():      return 3   # digit
     return {
-        '+':CC_PLUS,  '-':CC_MINUS, '*':CC_STAR,   '/':CC_SLASH,
-        '=':CC_EQ,    '<':CC_LT,    '>':CC_GT,     ':':CC_COLON,
-        '.':CC_DOT,   '(':CC_LPAREN,')':CC_RPAREN,
-        '[':CC_LBRACK,']':CC_RBRACK,';':CC_SEMI,   ',':CC_COMMA,
-        '{':CC_LBRACE,'}':CC_RBRACE,
-    }.get(ch, CC_OTHER)
+        '+':4,  '-':5,  '*':6,  '/':7,  '=':8,
+        '<':9,  '>':10, ':':11, '.':12,
+        '(':13, ')':14, '[':15, ']':16,
+        ';':17, ',':18,
+        '{':19, '}':20,
+    }.get(ch, 21)          # 21 = unknown
 
-# ── DFA states ────────────────────────────────────────────────
-(ST_START,
- ST_ID, ST_INT, ST_FRAC,
- ST_EXP_S, ST_EXP_SN, ST_EXP,
- ST_COMMENT,
- ST_COLON, ST_LT, ST_GT, ST_DOT) = range(12)
+# Number of character classes
+N = 22
 
-# Accepting states (≥ 100)
-(AC_ID, AC_INT, AC_REAL,
- AC_ASSIGN, AC_COLON,
- AC_EQ, AC_LT, AC_LE, AC_NE, AC_GT, AC_GE,
- AC_PLUS, AC_MINUS, AC_STAR, AC_SLASH,
- AC_LPAR, AC_RPAR, AC_LBRK, AC_RBRK,
- AC_SEMI, AC_COMMA,
- AC_DOT, AC_DOTDOT,
- AC_EOF) = range(100, 124)
+# ── Step 2: name the DFA states ───────────────────────────────
 
-ERR = 200
+# Non-accepting (working) states
+(S,   ID,  INT,  FRAC,
+ EXPS, EXPSN, EXP,
+ CMT, COL, LT,  GT,  DOT) = range(12)
 
-def is_accept(s): return 100 <= s < ERR
+# Accepting states (≥ 100  →  stop the loop and return a token)
+(A_ID,  A_INT, A_REAL,
+ A_ASSIGN, A_COLON,
+ A_EQ,  A_LT,  A_LE,  A_NE,  A_GT,  A_GE,
+ A_PLUS, A_MINUS, A_STAR, A_SLASH,
+ A_LPAR, A_RPAR, A_LBRK, A_RBRK,
+ A_SEMI, A_COMMA,
+ A_DOT,  A_DOTDOT, A_EOF) = range(100, 124)
 
-# ── Build the transition table ────────────────────────────────
-T = [[ERR]*22 for _ in range(12)]
+ERR = 200   # error state
 
-def _build():
-    # START
-    T[ST_START][CC_LETTER]=ST_ID;   T[ST_START][CC_E]=ST_ID
-    T[ST_START][CC_DIGIT] =ST_INT
-    T[ST_START][CC_PLUS]  =AC_PLUS; T[ST_START][CC_MINUS]=AC_MINUS
-    T[ST_START][CC_STAR]  =AC_STAR; T[ST_START][CC_SLASH]=AC_SLASH
-    T[ST_START][CC_EQ]    =AC_EQ
-    T[ST_START][CC_LT]    =ST_LT;   T[ST_START][CC_GT]  =ST_GT
-    T[ST_START][CC_COLON] =ST_COLON;T[ST_START][CC_DOT] =ST_DOT
-    T[ST_START][CC_LPAREN]=AC_LPAR; T[ST_START][CC_RPAREN]=AC_RPAR
-    T[ST_START][CC_LBRACK]=AC_LBRK; T[ST_START][CC_RBRACK]=AC_RBRK
-    T[ST_START][CC_SEMI]  =AC_SEMI; T[ST_START][CC_COMMA]=AC_COMMA
-    T[ST_START][CC_LBRACE]=ST_COMMENT
-    T[ST_START][CC_EOF]   =AC_EOF
+# ── Step 3: build the transition table ────────────────────────
 
-    # ID: letters/digits stay in ID
-    T[ST_ID][CC_LETTER]=ST_ID; T[ST_ID][CC_E]=ST_ID; T[ST_ID][CC_DIGIT]=ST_ID
+T = [[ERR]*N for _ in range(12)]   # T[state][char_class] = next_state
 
-    # INT
-    T[ST_INT][CC_DIGIT]=ST_INT; T[ST_INT][CC_DOT]=ST_FRAC; T[ST_INT][CC_E]=ST_EXP_S
+#          EOF  E    LTR  DIG  +       -       *       /
+T[S]    = [A_EOF,A_EOF,ERR,ERR,A_PLUS,A_MINUS,A_STAR,A_SLASH,
+#          =     <    >     :    .
+           A_EQ, LT,  GT,  COL, DOT,
+#          (       )       [       ]       ;       ,       {    }    ?
+           A_LPAR,A_RPAR,A_LBRK,A_RBRK,A_SEMI,A_COMMA,CMT, ERR, ERR]
+T[S][1] = ERR   # 'E'/'e' at start is a letter
+T[S][2] = ID    # letter → start identifier
+T[S][1] = ID    # E/e   → start identifier too
+T[S][3] = INT   # digit → start number
 
-    # FRAC
-    T[ST_FRAC][CC_DIGIT]=ST_FRAC; T[ST_FRAC][CC_E]=ST_EXP_S
+# ID: letters and digits stay in ID state
+for cls in (1, 2, 3):   T[ID][cls] = ID
 
-    # EXP
-    T[ST_EXP_S][CC_PLUS]=ST_EXP_SN; T[ST_EXP_S][CC_MINUS]=ST_EXP_SN
-    T[ST_EXP_S][CC_DIGIT]=ST_EXP
-    T[ST_EXP_SN][CC_DIGIT]=ST_EXP
-    T[ST_EXP][CC_DIGIT]=ST_EXP
+# INT: digits stay; '.' may start fraction; E starts exponent
+T[INT][3]  = INT   # more digits
+T[INT][12] = FRAC  # '.' → fraction
+T[INT][1]  = EXPS  # E/e → exponent
 
-    # COMMENT: everything stays in comment except '}' (close) and '{' (error)
-    for cc in range(22):
-        T[ST_COMMENT][cc] = ST_COMMENT
-    T[ST_COMMENT][CC_RBRACE]=ST_START   # close comment
-    T[ST_COMMENT][CC_LBRACE]=ERR        # nested '{'
-    T[ST_COMMENT][CC_EOF]   =ERR
+# FRAC: digits stay; E starts exponent
+T[FRAC][3] = FRAC
+T[FRAC][1] = EXPS
 
-    # COLON
-    T[ST_COLON][CC_EQ]=AC_ASSIGN
+# EXP_START: '+' or '-' → sign state;  digit → exponent digits
+T[EXPS][4]  = EXPSN   # '+'
+T[EXPS][5]  = EXPSN   # '-'
+T[EXPS][3]  = EXP
 
-    # LT
-    T[ST_LT][CC_EQ]=AC_LE; T[ST_LT][CC_GT]=AC_NE
+# EXP_SIGN: only a digit is valid
+T[EXPSN][3] = EXP
 
-    # GT
-    T[ST_GT][CC_EQ]=AC_GE
+# EXP: more digits
+T[EXP][3] = EXP
 
-    # DOT
-    T[ST_DOT][CC_DOT]=AC_DOTDOT
+# COMMENT: everything stays in comment except '}' (close) and '{' (error)
+for cls in range(N):   T[CMT][cls] = CMT
+T[CMT][20] = S      # '}' closes the comment → back to START
+T[CMT][19] = ERR    # '{' inside comment is illegal
+T[CMT][0]  = ERR    # EOF inside comment is illegal
 
-_build()
+# COL: '=' makes ':=',  anything else → plain ':'
+T[COL][8] = A_ASSIGN
 
-# States that accept by retracting (put current char back)
-RETRACT = {
-    ST_ID:ST_ID, ST_INT:ST_INT, ST_FRAC:ST_FRAC, ST_EXP:ST_EXP,
-    ST_COLON:ST_COLON, ST_LT:ST_LT, ST_GT:ST_GT, ST_DOT:ST_DOT,
-}
-RETRACT_AC = {
-    ST_ID:AC_ID, ST_INT:AC_INT, ST_FRAC:AC_REAL, ST_EXP:AC_REAL,
-    ST_COLON:AC_COLON, ST_LT:AC_LT, ST_GT:AC_GT, ST_DOT:AC_DOT,
-}
+# LT: '=' → '<=',  '>' → '<>'
+T[LT][8]  = A_LE
+T[LT][10] = A_NE
+
+# GT: '=' → '>='
+T[GT][8] = A_GE
+
+# DOT: '.' → '..'
+T[DOT][12] = A_DOTDOT
+
+# States that retract (put the current char back) when table says ERR
+RETRACT = {ID:A_ID, INT:A_INT, FRAC:A_REAL, EXP:A_REAL,
+           COL:A_COLON, LT:A_LT, GT:A_GT, DOT:A_DOT}
 
 # Map accepting state → Token
-def _make(ac, lexeme, line):
-    if ac == AC_ID:
-        return classify_word(lexeme, line)
-    if ac == AC_INT:
-        return Token(TT_NUM, lexeme, int(lexeme), line)
-    if ac == AC_REAL:
-        return Token(TT_NUM, lexeme, float(lexeme), line)
-    simple = {
-        AC_ASSIGN:Token(TT_ASSIGNOP,  ':=', line=line),
-        AC_COLON: Token(TT_COLON,     ':',  line=line),
-        AC_EQ:    Token(TT_RELOP,     '=',  line=line),
-        AC_LT:    Token(TT_RELOP,     '<',  line=line),
-        AC_LE:    Token(TT_RELOP,     '<=', line=line),
-        AC_NE:    Token(TT_RELOP,     '<>', line=line),
-        AC_GT:    Token(TT_RELOP,     '>',  line=line),
-        AC_GE:    Token(TT_RELOP,     '>=', line=line),
-        AC_PLUS:  Token(TT_ADDOP,     '+',  line=line),
-        AC_MINUS: Token(TT_ADDOP,     '-',  line=line),
-        AC_STAR:  Token(TT_MULOP,     '*',  line=line),
-        AC_SLASH: Token(TT_MULOP,     '/',  line=line),
-        AC_LPAR:  Token(TT_LPAREN,    '(',  line=line),
-        AC_RPAR:  Token(TT_RPAREN,    ')',  line=line),
-        AC_LBRK: Token(TT_LBRACKET,   '[',  line=line),
-        AC_RBRK: Token(TT_RBRACKET,   ']',  line=line),
-        AC_SEMI:  Token(TT_SEMICOLON, ';',  line=line),
-        AC_COMMA: Token(TT_COMMA,     ',',  line=line),
-        AC_DOT:   Token(TT_DOT,       '.',  line=line),
-        AC_DOTDOT:Token(TT_DOTDOT,    '..', line=line),
-        AC_EOF:   Token(TT_EOF,       'EOF',line=line),
+def _make_token(ac, lexeme, line):
+    if ac == A_ID:   return BaseLexer.scan_word(None, lexeme, 0)   # placeholder
+    # we call scan_word differently below; keep it simple:
+    if ac == A_INT:  return Token(TT_NUM, lexeme, int(lexeme),   line)
+    if ac == A_REAL: return Token(TT_NUM, lexeme, float(lexeme), line)
+    table = {
+        A_ASSIGN:(':=',TT_ASSIGNOP), A_COLON:(':',TT_COLON),
+        A_EQ:    ('=', TT_RELOP),   A_LT:   ('<', TT_RELOP),
+        A_LE:    ('<=',TT_RELOP),   A_NE:   ('<>',TT_RELOP),
+        A_GT:    ('>',TT_RELOP),    A_GE:   ('>=',TT_RELOP),
+        A_PLUS:  ('+', TT_ADDOP),   A_MINUS:('-', TT_ADDOP),
+        A_STAR:  ('*', TT_MULOP),   A_SLASH:('/', TT_MULOP),
+        A_LPAR:  ('(', TT_LPAREN),  A_RPAR: (')', TT_RPAREN),
+        A_LBRK:  ('[', TT_LBRACKET),A_RBRK:(']', TT_RBRACKET),
+        A_SEMI:  (';', TT_SEMICOLON),A_COMMA:(',',TT_COMMA),
+        A_DOT:   ('.', TT_DOT),     A_DOTDOT:('..',TT_DOTDOT),
+        A_EOF:   ('EOF',TT_EOF),
     }
-    return simple[ac]
+    lex, tt = table[ac]
+    return Token(tt, lex, line=line)
 
 
-# ── Driver (shared by both lexer classes) ─────────────────────
-def _run(lexer, lookup):
+# ── Step 4: the driver loop (shared by both classes below) ────
+
+def _drive(lexer, lookup):
     """
-    Core table-driven loop.
-    lookup(state, cc) → next_state   (full table or compressed dict)
+    lookup(state, char_class) → next_state
+    This same function drives both the full-table and compressed-table lexers.
     """
-    # skip whitespace
-    while lexer._peek() in (' ','\t','\r','\n'):
-        lexer._advance()
-
-    state = ST_START
+    lexer.skip()                    # drop whitespace / comments
+    state  = S
     lexeme = ''
-    sl = lexer.line
+    line   = lexer.line
 
     while True:
-        ch = lexer._peek()
+        ch  = lexer._peek()
 
-        # Dot-dot special case: 1..10 — don't consume '.' as decimal point
-        if state == ST_INT and ch == '.' and lexer._peek(1) == '.':
-            return _make(AC_INT, lexeme, sl)
+        # special case: '1..10' — don't consume '.' as decimal point
+        if state == INT and ch == '.' and lexer._peek(1) == '.':
+            return Token(TT_NUM, lexeme, int(lexeme), line)
 
-        cc = char_class(ch)
-        ns = lookup(state, cc)
+        cls = cc(ch)
+        ns  = lookup(state, cls)
 
         if ns == ERR:
-            if state in RETRACT_AC:
-                return _make(RETRACT_AC[state], lexeme, sl)
+            # if current state can retract, accept without consuming ch
+            if state in RETRACT:
+                ac = RETRACT[state]
+                if ac == A_ID:
+                    return BaseLexer.scan_word(lexer, lexeme, line)
+                return _make_token(ac, lexeme, line)
             raise LexicalError(
-                f"Line {sl}: unexpected '{ch}' (state={state}, lexeme='{lexeme}')")
+                f"Line {line}: unexpected '{ch}' (state={state}, so far='{lexeme}')")
 
-        if ch != '' and state != ST_COMMENT:
-            lexeme += ch
+        # consume character (but not inside a comment — don't add to lexeme)
         if ch != '':
             lexer._advance()
+            if state != CMT:
+                lexeme += ch
 
-        prev, state = state, ns
+        prev_state = state
+        state = ns
 
-        if is_accept(state):
-            return _make(state, lexeme, sl)
+        # accepting state → return token
+        if state >= 100:
+            if state == A_ID:
+                return BaseLexer.scan_word(lexer, lexeme, line)
+            return _make_token(state, lexeme, line)
 
-        # Comment just closed → reset and skip whitespace
-        if prev == ST_COMMENT and state == ST_START:
+        # comment just closed (CMT → S): reset lexeme, re-skip whitespace
+        if prev_state == CMT and state == S:
             lexeme = ''
-            while lexer._peek() in (' ','\t','\r','\n'):
-                lexer._advance()
-            sl = lexer.line
+            lexer.skip()
+            line = lexer.line
 
 
-# ── Approach 3a: Full Table ───────────────────────────────────
+# ── Approach 3a: Full transition table ────────────────────────
 class TransitionTable_Lexer(BaseLexer):
     def next_token(self):
-        return _run(self, lambda s, cc: T[s][cc])
+        return _drive(self, lambda s, c: T[s][c])
 
 
-# ── Approach 3b: Compressed Table (Bonus) ─────────────────────
+# ── Approach 3b: Compressed table (Bonus) ─────────────────────
 class CompressedTable_Lexer(BaseLexer):
-    # Build sparse dict once at class level
-    _sparse = {(s, cc): T[s][cc]
-               for s in range(12) for cc in range(22)
-               if T[s][cc] != ERR}
+    # Store only the non-error entries in a dict (saves memory)
+    _sparse = {(s, c): T[s][c]
+               for s in range(12) for c in range(N)
+               if T[s][c] != ERR}
 
     def next_token(self):
-        return _run(self, lambda s, cc: self._sparse.get((s, cc), ERR))
+        return _drive(self, lambda s, c: self._sparse.get((s, c), ERR))
 
     @classmethod
     def stats(cls):
-        total  = 12 * 22
+        total  = 12 * N
         stored = len(cls._sparse)
-        saved  = (1 - stored/total) * 100
-        print(f"  Full table : {total} cells")
-        print(f"  Stored     : {stored} non-error cells")
-        print(f"  Savings    : {saved:.0f}% memory saved\n")
+        print(f"  Full table : {total} cells  |  "
+              f"Stored: {stored}  |  "
+              f"Saved: {(1-stored/total)*100:.0f}%\n")
 
 
-# ── Quick demo ────────────────────────────────────────────────
+# ── demo ──────────────────────────────────────────────────────
 if __name__ == '__main__':
     src = "program test; var x:integer; begin x := 3 + 4 end."
-    print_tokens(TransitionTable_Lexer(src).tokenize_all(),
-                 "Approach 3 — Transition Table")
-    print("── Compressed Table Bonus ──")
+    print_tokens(TransitionTable_Lexer(src).tokenize_all(), "Approach 3 — Transition Table")
+    print("── Bonus: Compressed Table ──")
     CompressedTable_Lexer.stats()
-    print_tokens(CompressedTable_Lexer(src).tokenize_all(),
-                 "Bonus — Compressed Table")
+    print_tokens(CompressedTable_Lexer(src).tokenize_all(), "Bonus — Compressed Table")
