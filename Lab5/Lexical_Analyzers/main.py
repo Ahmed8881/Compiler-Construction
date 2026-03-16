@@ -1,10 +1,3 @@
-# ──────────────────────────────────────────────────────────────
-# main.py  —  Run all approaches on a Pascal source
-# Usage:
-#   python main.py              ← uses built-in GCD sample
-#   python main.py myfile.pas   ← lex your own file
-# ──────────────────────────────────────────────────────────────
-
 import sys, time
 from common import print_tokens
 from approach1_state_based      import StateBased_Lexer
@@ -45,11 +38,9 @@ def run(src):
         print_tokens(toks, title)
         results[title] = (toks, ms)
 
-    # Bonus memory stats
     print("── Compressed Table Stats ────────────────────────────")
     CompressedTable_Lexer.stats()
 
-    # Check all four produce the same token stream
     print("── Consistency ───────────────────────────────────────")
     base = [t.lexeme for t in results["Approach 1 — State-Based DFA"][0]]
     ok   = True
@@ -61,7 +52,6 @@ def run(src):
     if ok:
         print("  \033[32mAll four produce identical token streams ✓\033[0m\n")
 
-    # Speed comparison
     print("── Speed ─────────────────────────────────────────────")
     for title, (_, ms) in results.items():
         print(f"  {ms:.4f} ms  {title}")
