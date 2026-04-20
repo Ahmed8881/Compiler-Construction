@@ -65,3 +65,18 @@ declarations' → var identifier_list : type ; declarations' | null
 
 6.subprogram_declarations  → subprogram_declarations'
 subprogram_declarations' → subprogram_declaration ; subprogram_declarations' | null
+
+10.parameter_list  → identifier_list : type parameter_list'
+parameter_list' → ; identifier_list : type parameter_list' | null
+
+13.statement_list  → statement statement_list'
+statement_list' → ; statement statement_list' |null
+
+17.expression_list  → expression expression_list'
+expression_list' → , expression expression_list' |null
+
+19.simple_expression  → term simple_expression' | sign term simple_expression'
+simple_expression' → addop term simple_expression' | null
+
+20.term  → factor term'
+term' → mulop factor term'  | null
