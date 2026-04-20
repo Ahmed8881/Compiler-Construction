@@ -43,7 +43,7 @@ Production Rules :
 
 22. sign → +| -
 
--------------------------------Require for rule 15 ,16,18,21--------------------------------------------
+-------------------------------Remove Left Factoring for rule 15 ,16,18,21--------------------------------------------
 15.variable → id variable'
    variable' → [ expression ] | null
 
