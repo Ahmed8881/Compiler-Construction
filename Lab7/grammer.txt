@@ -59,3 +59,9 @@ factor' → ( expression_list )| null
 
 2.identifier_list  → id identifier_list'
 identifier_list' → , id identifier_list' | NULL
+
+3.declarations  → declarations'
+declarations' → var identifier_list : type ; declarations' | null
+
+6.subprogram_declarations  → subprogram_declarations'
+subprogram_declarations' → subprogram_declaration ; subprogram_declarations' | null
