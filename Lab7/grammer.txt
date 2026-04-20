@@ -43,7 +43,7 @@ Production Rules :
 
 22. sign → +| -
 
-Require for rule 15 ,16,18,21,
+-------------------------------Require for rule 15 ,16,18,21--------------------------------------------
 15.variable → id variable'
    variable' → [ expression ] | null
 
@@ -52,5 +52,10 @@ Require for rule 15 ,16,18,21,
 
 18.expression → simple_expression expression'
   expression' → relop simple_expression | null
+
 21.factor → id factor'| num| ( expression )| not factor
 factor' → ( expression_list )| null
+---------------------------------Left Recursion 2,3,6,10,13,17,19,20----------------------------
+
+2.identifier_list  → id identifier_list'
+identifier_list' → , id identifier_list' | NULL
