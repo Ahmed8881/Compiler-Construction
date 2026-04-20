@@ -410,12 +410,26 @@ def parse_file(path: str):
 
 
 def main():
-	if len(sys.argv) < 2:
-		print("Usage: python recursive_descent.py <pascal-file>")
-		sys.exit(1)
-
 	try:
-		parse_file(sys.argv[1])
+		if len(sys.argv) >= 2:
+			parse_file(sys.argv[1])
+		else:
+			print("Enter Pascal code  line by line.")
+			print("Press Enter on an empty line to check ans.")
+			lines = []
+			while True:
+				try:
+					line = input()
+				except EOFError:
+					break
+				if line == "":
+					break
+				lines.append(line)
+			source = "\n".join(lines)
+			if not source.strip():
+				print("No input provided.")
+				sys.exit(1)
+			parse_source(source)
 		print("Input accepted: syntax is valid.")
 	except ParseError as error:
 		print(f"Syntax error: {error}")
