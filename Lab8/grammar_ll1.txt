@@ -1,0 +1,49 @@
+# LL(1) grammar (left recursion removed and left factored)
+# Format: NonTerminal -> symbol symbol | alternative
+# Use epsilon for empty production.
+
+program -> program id ( identifier_list ) ; declarations subprogram_declarations compound_statement
+
+identifier_list -> id identifier_list_tail
+identifier_list_tail -> , id identifier_list_tail | epsilon
+
+declarations -> var identifier_list : type ; declarations | epsilon
+
+type -> standard_type | array [ num .. num ] of standard_type
+standard_type -> integer | real
+
+subprogram_declarations -> subprogram_declaration ; subprogram_declarations | epsilon
+subprogram_declaration -> subprogram_head declarations compound_statement
+subprogram_head -> function id arguments : standard_type ; | procedure id arguments ;
+
+arguments -> ( parameter_list ) | epsilon
+parameter_list -> identifier_list : type parameter_list_tail
+parameter_list_tail -> ; identifier_list : type parameter_list_tail | epsilon
+
+compound_statement -> begin optional_statements end
+optional_statements -> statement_list | epsilon
+statement_list -> statement statement_list_tail
+statement_list_tail -> ; statement statement_list_tail | epsilon
+
+statement -> id statement_id_tail | compound_statement | if expression then statement else statement | while expression do statement
+statement_id_tail -> [ expression ] assignop expression | assignop expression | ( expression_list ) | epsilon
+
+expression_list -> expression expression_list_tail
+expression_list_tail -> , expression expression_list_tail | epsilon
+
+expression -> simple_expression expression_tail
+expression_tail -> relop simple_expression | epsilon
+
+simple_expression -> term simple_expression_tail | sign term simple_expression_tail
+simple_expression_tail -> addop term simple_expression_tail | epsilon
+
+term -> factor term_tail
+term_tail -> mulop factor term_tail | epsilon
+
+factor -> id factor_tail | num | ( expression ) | not factor
+factor_tail -> ( expression_list ) | epsilon
+
+sign -> + | -
+addop -> + | - | or
+mulop -> * | / | div | mod | and
+relop -> = | <> | < | <= | > | >=
