@@ -2,7 +2,7 @@
 # Format: NonTerminal -> symbol symbol | alternative
 # Use epsilon for empty production.
 
-program -> program id ( identifier_list ) ; declarations subprogram_declarations compound_statement
+program_start -> program id ( identifier_list ) ; declarations subprogram_declarations compound_statement
 
 identifier_list -> id identifier_list_tail
 identifier_list_tail -> , id identifier_list_tail | epsilon
