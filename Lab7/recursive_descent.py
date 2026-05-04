@@ -244,6 +244,7 @@ class RecursiveDescentParser:
 		while self.check("KEYWORD", "function") or self.check("KEYWORD", "procedure"):
 			self.subprogram_declaration()
 
+
 	def subprogram_declaration(self):
 		self.subprogram_head()
 		self.declarations()
