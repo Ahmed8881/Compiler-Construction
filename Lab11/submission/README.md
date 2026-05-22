@@ -2,11 +2,19 @@
 
 This submission implements a hash-based symbol table with nested scope handling for the Pascal subset used in the compiler construction labs.
 
+It covers the graded Lab 13 tasks as follows:
+
+- Task 1: fixed-size hash table with separate chaining, insert, lookup, delete, and print.
+- Task 2: scope stack with begin_scope, end_scope, lookup, and lookup_current.
+- Task 3: parser integration points documented for declarations, uses, and scope entry/exit.
+- Task 4: tabular pretty print for each scope.
+- Task 5: LaTeX test report in report.tex.
+
 ## Files
 
 - `src/symtable.py` - symbol table implementation, hash function, scope helpers, and pretty printing.
 - `test_driver.py` - two test scenarios that exercise insert, lookup, delete, begin_scope, and end_scope.
-- `requirements.txt` - empty dependency list; the project uses only the Python standard library.
+- `report.tex` - LaTeX report with test cases, expected output, and observed output.
 
 ## How to run
 
@@ -14,6 +22,12 @@ From the `Lab11/submission` folder:
 
 ```bash
 python test_driver.py
+```
+
+The report can be compiled with a standard LaTeX toolchain:
+
+```bash
+pdflatex report.tex
 ```
 
 ## How the parser from the previous lab can use this module

@@ -1,0 +1,59 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+
+\title{Lab 13 Symbol Table Manager Test Report}
+\author{Compiler Construction Lab}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Overview}
+This submission implements the lab symbol table module with fixed-size hashing, separate chaining, nested scope management, duplicate declaration checks, undeclared-name lookup, and tabular pretty printing.
+
+\section{Task Coverage}
+\begin{itemize}[leftmargin=1.25em]
+  \item Task 1: Implemented in \texttt{src/symtable.py} using a table of 211 slots and chained entries.
+  \item Task 2: Implemented with \texttt{begin\_scope}, \texttt{end\_scope}, \texttt{lookup}, and \texttt{lookup\_current}.
+  \item Task 3: The parser integration points are documented in the README and the symbol table raises errors for duplicate declarations and undeclared uses.
+  \item Task 4: Implemented by \texttt{print\_table()}, which prints a clean table per scope.
+  \item Task 5: This report records the test cases and observed output.
+\end{itemize}
+
+\section{Test Cases}
+The following cases were exercised with \texttt{test\_driver.py}.
+
+\begin{longtable}{|p{0.16\textwidth}|p{0.30\textwidth}|p{0.22\textwidth}|p{0.26\textwidth}|}
+\hline
+\textbf{Case} & \textbf{Input / Action} & \textbf{Expected Output} & \textbf{Observed Output} \\
+\hline
+1 & Insert 10 names into one scope. & All inserts succeed; table holds 10 entries. & All 10 entries were inserted and printed in the final table. \\
+\hline
+2 & Perform 5 lookups, including misses. & Existing names are found; missing names report not found. & The driver printed found for count, index, and total, and not found for nothere1 and nothere2. \\
+\hline
+3 & Delete 3 names from the scope. & Requested names are removed and no longer appear in the dump. & index, total, and temp were deleted before the final table print. \\
+\hline
+4 & Create three nested scopes and shadow x in the innermost scope. & lookup should climb to outer scopes before shadowing, then resolve to the inner declaration after shadowing. & The driver reported x and y from scope 0 before shadowing, then reported x from scope 2 after the inner declaration. \\
+\hline
+5 & Insert a duplicate x and look up undeclared a. & Duplicate declaration error for x and undeclared variable error for a. & The driver printed ERROR line 11: duplicate declaration 'x' and ERROR line 12: undeclared variable 'a'. \\
+\hline
+\end{longtable}
+
+\section{Observed Output Excerpt}
+\begin{verbatim}
+[Scope 2] lookup x -> found at scope 0
+[Scope 2] lookup y -> found at scope 0
+[Scope 2] lookup x -> found at scope 2 after shadowing
+ERROR line 11: duplicate declaration 'x'
+ERROR line 12: undeclared variable 'a'
+\end{verbatim}
+
+\section{Limitations}
+The test driver validates the symbol table module directly. Full parser integration remains documented in the README so the same module can be reused when the Lab 4 or Lab 5 parser is connected.
+
+\end{document}

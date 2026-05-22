@@ -37,6 +37,9 @@ def scenario1() -> None:
         print(f"[Scope 2] lookup y -> found at scope {result.scope_level}")
 
     inner_scope.insert("x", "variable", "integer", line=8)
+    result = inner_scope.lookup("x")
+    if result is not None:
+        print(f"[Scope 2] lookup x -> found at scope {result.scope_level} after shadowing")
     inner_scope = end_scope(inner_scope)
 
     func_scope = end_scope(func_scope)
