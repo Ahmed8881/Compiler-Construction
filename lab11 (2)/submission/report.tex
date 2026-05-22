@@ -1,0 +1,109 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+
+\title{Lab 11 Alternate Symbol Table Report}
+\author{Compiler Construction Lab}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This report documents a second Lab 11 symbol-table implementation placed in a separate folder with different filenames and internal naming, while preserving the same functional behavior required by the assignment. The goal of this copy is to demonstrate the same graded behavior through a cleanly organized alternate submission folder.
+
+The module supports a fixed-size hash table, nested scopes, shadowing, duplicate checks, undeclared-name detection, and tabular scope dumps. It is written in Python and can be run independently through the included driver.
+
+\section{Assignment Goals}
+The lab requires five major outcomes:
+\begin{itemize}[leftmargin=1.25em]
+  \item Build a hash table for one scope with insert, lookup, delete, and print.
+  \item Add scope stacking with begin-scope and end-scope behavior.
+  \item Detect duplicate declarations in the same scope and undeclared uses.
+  \item Pretty-print each scope in a table that is easy to inspect.
+  \item Provide a short test report with examples and observed output.
+\end{itemize}
+
+\section{Implementation Summary}
+\subsection{Table Structure}
+The symbol table uses 211 buckets, which matches the lab specification. Each bucket stores a linked chain of entries, so collisions are handled by separate chaining instead of replacement. This keeps the implementation simple while still supporting multiple names that hash to the same slot.
+
+\subsection{Insertion and Lookup}
+Insertion checks only the current scope before adding a new name. If the name already exists in the current scope, the implementation writes an error message to standard error and rejects the declaration. Lookup first checks the current scope and then climbs through parent scopes until a match is found or the global scope is reached.
+
+\subsection{Scope Handling}
+Each scope stores a pointer to its parent and a numeric scope level. Opening a scope creates a new table whose parent is the previous current scope. Closing a scope prints the contents of the current scope before returning the parent scope. This behavior is important because the lab requires the popped scope to be dumped before it disappears.
+
+\subsection{Pretty Printing}
+The table printer produces a compact aligned view with the columns ID, Name, Kind, Type, Scope, and Line. The output is sorted by line number and insertion order so the dump is easy to compare with the driver output and with the expected lab format.
+
+\subsection{Error Reporting}
+The implementation reports two important error conditions:
+\begin{itemize}[leftmargin=1.25em]
+  \item Duplicate declaration in the same scope.
+  \item Use of an undeclared variable.
+\end{itemize}
+These messages are written in the same style as the sample lab output, which makes them suitable for grading and manual inspection.
+
+\section{Files in This Folder}
+The alternate submission is split into a small, clear folder structure.
+\begin{itemize}[leftmargin=1.25em]
+  \item \texttt{src/scope\_table.py} contains the hash table, scope stack, lookup logic, deletion, and printing.
+  \item \texttt{demo\_driver.py} runs two scenarios that exercise the implementation.
+  \item \texttt{report.tex} is the detailed report you are reading.
+  \item \texttt{test/} contains five input fixtures.
+  \item \texttt{output/} contains the corresponding captured outputs.
+\end{itemize}
+
+\section{Test Cases}
+Five fixtures were created in the \texttt{test/} folder and their outputs were saved in the \texttt{output/} folder. The table below describes what each case checks.
+
+\begin{longtable}{|p{0.11\textwidth}|p{0.28\textwidth}|p{0.23\textwidth}|p{0.28\textwidth}|}
+\caption{Test cases for the alternate submission}\label{tab:altcases}\\
+\hline
+\textbf{Case} & \textbf{Fixture} & \textbf{Expected Result} & \textbf{Observed Result} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Case} & \textbf{Fixture} & \textbf{Expected Result} & \textbf{Observed Result} \\
+\hline
+\endhead
+1 & \texttt{alpha\_basic\_hash.txt} & 10 inserts, 5 lookups, and 3 deletes on one scope. & The final table contains 7 names after deletion and the lookup results include both hits and misses. \\
+\hline
+2 & \texttt{beta\_shadowing.txt} & Inner \texttt{x} hides outer \texttt{x} in nested scopes. & Lookup resolves to scope 0 first and scope 2 after shadowing. \\
+\hline
+3 & \texttt{gamma\_errors.txt} & Duplicate and undeclared-name errors are reported. & Error lines for duplicate \texttt{x} and undeclared \texttt{a} were printed. \\
+\hline
+4 & \texttt{delta\_scope\_dump.txt} & Each scope is dumped when it ends. & Scope 2, then scope 1, then scope 0 were printed in exit order. \\
+\hline
+5 & \texttt{epsilon\_table\_format.txt} & Tabular print is aligned and readable. & The output includes a header row and aligned columns. \\
+\hline
+\end{longtable}
+
+\section{Observed Output}
+The most important runtime behavior is shown below.
+
+\begin{verbatim}
+[Scope 0] Enter
+[Scope 1] Enter
+[Scope 2] Enter
+[Scope 2] lookup x -> found at scope 0
+[Scope 2] lookup y -> found at scope 0
+[Scope 2] lookup x -> found at scope 2 after shadowing
+[Scope 2] Exit, dump:
+ERROR line 11: duplicate declaration 'x'
+ERROR line 12: undeclared variable 'a'
+[Scope 0] Exit, dump:
+\end{verbatim}
+
+\section{Limitations and Notes}
+This alternate folder is intentionally independent from the original Lab 11 submission folder, but it uses the same underlying ideas and produces the same behavior. The driver demonstrates the symbol table directly, so parser integration is described in the report rather than hard-coded into the test script.
+
+\section{Conclusion}
+This alternate folder meets the same functional goals as the main Lab 11 submission but uses different filenames, different internal identifiers, and a separate report so it can be treated as an independent copy for submission management. The test fixtures and output files included in this folder provide evidence that the behavior matches the assignment requirements.
+
+\end{document}

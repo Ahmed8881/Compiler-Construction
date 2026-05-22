@@ -1,0 +1,8 @@
+Case 5: Pretty print format
+
+Actions:
+- Insert several symbols into one scope.
+- Print the table.
+
+Expected:
+- Header row and aligned columns.

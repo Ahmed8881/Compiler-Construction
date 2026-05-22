@@ -1,0 +1,6 @@
+Case 4: Scope dump sequence
+
+Actions:
+- Create three nested scopes.
+- Populate each scope with symbols.
+- End scopes from inner to outer.

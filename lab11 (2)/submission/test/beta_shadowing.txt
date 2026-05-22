@@ -1,0 +1,6 @@
+Case 2: Nested scope shadowing
+
+Actions:
+- Open three nested scopes.
+- Insert a symbol named x in the outer and inner scopes.
+- Check that the inner declaration hides the outer one.

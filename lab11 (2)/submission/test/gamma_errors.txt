@@ -1,0 +1,6 @@
+Case 3: Duplicate and undeclared identifiers
+
+Actions:
+- Insert x in the global scope.
+- Insert x again in the same scope.
+- Look up a before declaring it.

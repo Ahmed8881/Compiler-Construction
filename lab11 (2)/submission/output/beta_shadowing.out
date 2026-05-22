@@ -1,0 +1,9 @@
+[Scope 0] Enter
+[Scope 1] Enter
+[Scope 2] Enter
+[Scope 2] lookup x -> found at scope 0
+[Scope 2] lookup y -> found at scope 0
+[Scope 2] lookup x -> found at scope 2 after shadowing
+[Scope 2] Exit, dump:
+[Scope 1] Exit, dump:
+[Scope 0] Exit, dump:

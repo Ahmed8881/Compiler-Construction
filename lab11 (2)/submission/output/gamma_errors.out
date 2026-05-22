@@ -1,0 +1,2 @@
+ERROR line 11: duplicate declaration 'x'
+ERROR line 12: undeclared variable 'a'

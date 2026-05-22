@@ -1,0 +1,20 @@
+lookup count -> found
+lookup index -> found
+lookup nothere1 -> not found
+lookup total -> found
+lookup nothere2 -> not found
+delete index -> deleted
+delete total -> deleted
+delete temp -> deleted
+Final table state:
++----+------------+------------+---------+-------+------+
+|  ID | Name        | Kind        | Type     | Scope  | Line  |
++----+------------+------------+---------+-------+------+
+|   1 | count       | variable    | integer  |   0    |   1   |
+|   2 | result      | variable    | integer  |   0    |   3   |
+|   3 | flag        | variable    | integer  |   0    |   4   |
+|   4 | avg         | variable    | real     |   0    |   6   |
+|   5 | sum         | variable    | real     |   0    |   7   |
+|   6 | max         | variable    | integer  |   0    |   8   |
+|   7 | min         | variable    | integer  |   0    |   9   |
++----+------------+------------+---------+-------+------+
