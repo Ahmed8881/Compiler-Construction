@@ -6,191 +6,96 @@ class OperatorPrecedenceParser:
         self.grammar = defaultdict(list)
         self.non_terminals = set()
         self.terminals = set()
-        self.first_set = defaultdict(set)
-        self.last_set = defaultdict(set)
         self.precedence_table = defaultdict(dict)
         self.define_grammar()
-        self.define_operators()
-        self.compute_first_last()
-        self.build_precedence_table()
+        self.define_precedence_table()
 
     def define_grammar(self):
-        self.grammar['E'] = ['E relop T', 'T']
-        self.grammar['T'] = ['T addop F', 'F']
-        self.grammar['F'] = ['F mulop P', 'P']
-        self.grammar['P'] = ['id', 'num', '( E )', 'not P']
-
+        self.grammar = {
+            'E': ['E relop T', 'T'],
+            'T': ['T addop F', 'F'],
+            'F': ['F mulop P', 'P'],
+            'P': ['id', 'num', '( E )', 'not P']
+        }
         self.non_terminals = {'E', 'T', 'F', 'P'}
         self.terminals = {'id', 'num', '+', '-', '*', '/', '(', ')',
                           'relop', 'addop', 'mulop', 'not', '$'}
 
-    def define_operators(self):
-        self.operators = {
-            '+', '-', '*', '/', 'relop', 'addop', 'mulop', 'not',
-            '(', ')'
-        }
+    def define_precedence_table(self):
+        pt = self.precedence_table
 
-    def get_precedence(self, op):
-        precedence = {
-            'not': 8,
-            'mulop': 7,
-            '*': 7,
-            '/': 7,
-            'addop': 6,
-            '+': 6,
-            '-': 6,
-            'relop': 4,
-        }
-        return precedence.get(op, 0)
+        rels = [
+            ('$', '$', '='),
+            ('$', 'id', '<'), ('$', 'num', '<'), ('$', '(', '<'),
+            ('$', '+', '<'), ('$', '-', '<'), ('$', '*', '<'), ('$', '/', '<'),
+            ('$', 'addop', '<'), ('$', 'mulop', '<'), ('$', 'relop', '<'), ('$', 'not', '<'),
 
-    def compute_first_last(self):
-        for nt in self.non_terminals:
-            self.first_set[nt] = set()
-            self.last_set[nt] = set()
+            ('id', '$', '>'), ('id', '+', '>'), ('id', '-', '>'),
+            ('id', '*', '>'), ('id', '/', '>'),
+            ('id', 'addop', '>'), ('id', 'mulop', '>'), ('id', 'relop', '>'),
+            ('id', ')', '>'), ('id', ';', '>'),
 
-        changed = True
-        while changed:
-            changed = False
-            for lhs in self.grammar:
-                for rhs in self.grammar[lhs]:
-                    symbols = rhs.split()
-                    if symbols:
-                        first_symbol = symbols[0]
-                        if first_symbol in self.terminals or first_symbol in self.operators:
-                            if first_symbol not in self.first_set[lhs]:
-                                self.first_set[lhs].add(first_symbol)
-                                changed = True
-                        elif first_symbol in self.non_terminals:
-                            for s in self.first_set[first_symbol]:
-                                if s not in self.first_set[lhs]:
-                                    self.first_set[lhs].add(s)
-                                    changed = True
+            ('num', '$', '>'), ('num', '+', '>'), ('num', '-', '>'),
+            ('num', '*', '>'), ('num', '/', '>'),
+            ('num', 'addop', '>'), ('num', 'mulop', '>'), ('num', 'relop', '>'),
+            ('num', ')', '>'),
 
-                        last_symbol = symbols[-1]
-                        if last_symbol in self.terminals or last_symbol in self.operators:
-                            if last_symbol not in self.last_set[lhs]:
-                                self.last_set[lhs].add(last_symbol)
-                                changed = True
-                        elif last_symbol in self.non_terminals:
-                            for s in self.last_set[last_symbol]:
-                                if s not in self.last_set[lhs]:
-                                    self.last_set[lhs].add(s)
-                                    changed = True
+            ('+', '$', '>'), ('+', 'id', '<'), ('+', 'num', '<'), ('+', '(', '<'),
+            ('+', ')', '>'), ('+', '+', '>'), ('+', '-', '>'),
+            ('+', '*', '<'), ('+', '/', '<'),
+            ('+', 'addop', '>'), ('+', 'mulop', '<'), ('+', 'relop', '>'),
+            ('+', 'not', '<'),
 
-    def build_precedence_table(self):
-        for lhs in self.grammar:
-            for rhs in self.grammar[lhs]:
-                symbols = rhs.split()
-                for i in range(len(symbols) - 1):
-                    a = symbols[i]
-                    b = symbols[i + 1]
+            ('-', '$', '>'), ('-', 'id', '<'), ('-', 'num', '<'), ('-', '(', '<'),
+            ('-', ')', '>'), ('-', '+', '>'), ('-', '-', '>'),
+            ('-', '*', '<'), ('-', '/', '<'),
+            ('-', 'addop', '>'), ('-', 'mulop', '<'), ('-', 'relop', '>'),
+            ('-', 'not', '<'),
 
-                    a_is_terminal = a in self.terminals or a in self.operators
-                    b_is_terminal = b in self.terminals or b in self.operators
-                    a_is_nt = a in self.non_terminals
-                    b_is_nt = b in self.non_terminals
+            ('*', '$', '>'), ('*', 'id', '<'), ('*', 'num', '<'), ('*', '(', '<'),
+            ('*', ')', '>'), ('*', '+', '>'), ('*', '-', '>'),
+            ('*', '*', '>'), ('*', '/', '>'),
+            ('*', 'addop', '>'), ('*', 'mulop', '>'), ('*', 'relop', '>'),
+            ('*', 'not', '<'),
 
-                    if a_is_terminal and b_is_terminal:
-                        self.set_relation(a, b, '=')
-                    elif a_is_terminal and b_is_nt:
-                        for f in self.first_set[b]:
-                            self.set_relation(a, f, '<')
-                    elif a_is_nt and b_is_terminal:
-                        for l in self.last_set[a]:
-                            self.set_relation(l, b, '>')
-                    elif i + 2 < len(symbols):
-                        a_nt = a
-                        b_ter = symbols[i + 1]
-                        c_nt = symbols[i + 2]
-                        if (a_nt in self.non_terminals and
-                            (b_ter in self.terminals or b_ter in self.operators) and
-                            c_nt in self.non_terminals):
-                            for l in self.last_set[a_nt]:
-                                self.set_relation(l, b_ter, '>')
-                            for f in self.first_set[c_nt]:
-                                self.set_relation(b_ter, f, '<')
+            ('/', '$', '>'), ('/', 'id', '<'), ('/', 'num', '<'), ('/', '(', '<'),
+            ('/', ')', '>'), ('/', '+', '>'), ('/', '-', '>'),
+            ('/', '*', '>'), ('/', '/', '>'),
+            ('/', 'addop', '>'), ('/', 'mulop', '>'), ('/', 'relop', '>'),
+            ('/', 'not', '<'),
 
-        self.set_relation('(', ')', '=')
+            ('(', '$', ''), ('(', 'id', '<'), ('(', 'num', '<'), ('(', '(', '<'),
+            ('(', ')', '='), ('(', '+', '<'), ('(', '-', '<'),
+            ('(', '*', '<'), ('(', '/', '<'),
+            ('(', 'addop', '<'), ('(', 'mulop', '<'), ('(', 'relop', '<'),
+            ('(', 'not', '<'),
 
-        arithmetic_ops = ['+', '-', '*', '/', 'addop', 'mulop', 'relop']
-        for t in arithmetic_ops:
-            self.set_relation('(', t, '<')
-            self.set_relation(t, ')', '>')
-        self.set_relation('(', 'id', '<')
-        self.set_relation('(', 'num', '<')
-        self.set_relation('(', 'not', '<')
-        self.set_relation('(', '(', '<')
+            (')', '$', '>'), (')', '+', '>'), (')', '-', '>'),
+            (')', '*', '>'), (')', '/', '>'),
+            (')', 'addop', '>'), (')', 'mulop', '>'), (')', 'relop', '>'),
+            (')', ')', '>'),
 
-        self.set_relation('id', ')', '>')
-        self.set_relation('num', ')', '>')
+            ('addop', '$', '>'), ('addop', 'id', '<'), ('addop', 'num', '<'), ('addop', '(', '<'),
+            ('addop', ')', '>'), ('addop', 'addop', '>'), ('addop', 'mulop', '<'),
+            ('addop', 'relop', '>'), ('addop', 'not', '<'),
 
-        for t in arithmetic_ops:
-            self.set_relation('$', t, '<')
-            self.set_relation(t, '$', '>')
-        self.set_relation('$', 'id', '<')
-        self.set_relation('$', 'num', '<')
-        self.set_relation('$', '(', '<')
-        self.set_relation('$', 'not', '<')
-        self.set_relation('id', '$', '>')
-        self.set_relation('num', '$', '>')
-        self.set_relation(')', '$', '>')
-        self.set_relation('$', '$', '=')
+            ('mulop', '$', '>'), ('mulop', 'id', '<'), ('mulop', 'num', '<'), ('mulop', '(', '<'),
+            ('mulop', ')', '>'), ('mulop', 'addop', '>'), ('mulop', 'mulop', '>'),
+            ('mulop', 'relop', '>'), ('mulop', 'not', '<'),
 
-        self.set_relation('+', '+', '>')
-        self.set_relation('+', '-', '>')
-        self.set_relation('-', '+', '>')
-        self.set_relation('-', '-', '>')
-        self.set_relation('*', '*', '>')
-        self.set_relation('*', '/', '>')
-        self.set_relation('/', '*', '>')
-        self.set_relation('/', '/', '>')
-        self.set_relation('*', '+', '>')
-        self.set_relation('*', '-', '>')
-        self.set_relation('/', '+', '>')
-        self.set_relation('/', '-', '>')
-        self.set_relation('+', '*', '<')
-        self.set_relation('+', '/', '<')
-        self.set_relation('-', '*', '<')
-        self.set_relation('-', '/', '<')
+            ('relop', '$', '>'), ('relop', 'id', '<'), ('relop', 'num', '<'), ('relop', '(', '<'),
+            ('relop', ')', '>'), ('relop', 'addop', '<'), ('relop', 'mulop', '<'),
+            ('relop', 'relop', '>'), ('relop', 'not', '<'),
 
-        self.set_relation('addop', 'addop', '>')
-        self.set_relation('mulop', 'mulop', '>')
-        self.set_relation('mulop', 'addop', '>')
-        self.set_relation('addop', 'mulop', '<')
-        self.set_relation('relop', 'relop', '>')
-        self.set_relation('not', 'not', '<')
+            ('not', '$', '>'), ('not', 'id', '<'), ('not', 'num', '<'), ('not', '(', '<'),
+            ('not', 'not', '<'), ('not', '+', '>'), ('not', '-', '>'),
+            ('not', '*', '>'), ('not', '/', '>'), ('not', 'addop', '>'),
+            ('not', 'mulop', '>'), ('not', 'relop', '>'),
+        ]
 
-        self.set_relation('addop', '*', '<')
-        self.set_relation('addop', '/', '<')
-        self.set_relation('mulop', '+', '>')
-        self.set_relation('mulop', '-', '>')
-        self.set_relation('*', 'addop', '>')
-        self.set_relation('/', 'addop', '>')
-        self.set_relation('+', 'mulop', '<')
-        self.set_relation('-', 'mulop', '<')
-
-        for op in ['id', 'num']:
-            self.set_relation(op, '+', '>')
-            self.set_relation(op, '-', '>')
-            self.set_relation(op, '*', '>')
-            self.set_relation(op, '/', '>')
-            self.set_relation(op, 'addop', '>')
-            self.set_relation(op, 'mulop', '>')
-            self.set_relation(op, 'relop', '>')
-
-        for op in ['+', '-', '*', '/', 'addop', 'mulop', 'relop']:
-            self.set_relation(op, 'id', '<')
-            self.set_relation(op, 'num', '<')
-            self.set_relation(op, '(', '<')
-            self.set_relation(op, 'not', '<')
-
-        self.set_relation('not', 'id', '<')
-        self.set_relation('not', 'num', '<')
-        self.set_relation('not', '(', '<')
-
-    def set_relation(self, a, b, rel):
-        if b not in self.precedence_table[a]:
-            self.precedence_table[a][b] = rel
+        for a, b, rel in rels:
+            if rel:
+                pt[a][b] = rel
 
     def get_relation(self, a, b):
         return self.precedence_table[a].get(b, None)
@@ -199,37 +104,28 @@ class OperatorPrecedenceParser:
         tokens = []
         i = 0
         input_str = input_str.strip()
+        special_tokens = ['id', 'num', 'addop', 'mulop', 'relop', 'not']
+        special_tokens.sort(key=len, reverse=True)
+
         while i < len(input_str):
-            if input_str[i:].startswith('id'):
-                tokens.append('id')
-                i += 2
-            elif input_str[i:].startswith('num'):
-                tokens.append('num')
-                i += 3
-            elif input_str[i:].startswith('addop'):
-                tokens.append('addop')
-                i += 5
-            elif input_str[i:].startswith('mulop'):
-                tokens.append('mulop')
-                i += 5
-            elif input_str[i:].startswith('relop'):
-                tokens.append('relop')
-                i += 5
-            elif input_str[i:].startswith('not'):
-                tokens.append('not')
-                i += 3
-            elif input_str[i] in '()+-*/':
+            matched = False
+            for tok in special_tokens:
+                if input_str[i:].startswith(tok):
+                    tokens.append(tok)
+                    i += len(tok)
+                    matched = True
+                    break
+            if matched:
+                continue
+
+            if input_str[i] in '()+-*/':
                 tokens.append(input_str[i])
                 i += 1
             elif input_str[i].isalpha():
                 j = i
                 while j < len(input_str) and (input_str[j].isalpha() or input_str[j] == '_'):
                     j += 1
-                word = input_str[i:j]
-                if word in {'addop', 'mulop', 'relop', 'not'}:
-                    tokens.append(word)
-                else:
-                    tokens.append('id')
+                tokens.append('id')
                 i = j
             elif input_str[i].isdigit():
                 j = i
@@ -241,37 +137,89 @@ class OperatorPrecedenceParser:
                 i += 1
             else:
                 i += 1
+
         tokens.append('$')
         return tokens
 
-    def find_handle(self, stack):
-        stack_symbols = []
-        for s in stack:
-            if s not in ['<', '=', '>']:
-                stack_symbols.append(s)
+    def get_top_terminal(self, stack):
+        for s in reversed(stack):
+            if s in self.terminals:
+                return s
+        return None
 
-        for lhs in self.grammar:
-            for rhs in self.grammar[lhs]:
-                rhs_symbols = rhs.split()
-                if len(rhs_symbols) <= len(stack_symbols):
-                    match = True
-                    for i in range(len(rhs_symbols)):
-                        rhs_sym = rhs_symbols[-(i + 1)]
-                        stack_sym = stack_symbols[-(i + 1)]
-                        if rhs_sym != stack_sym:
-                            match = False
-                            break
-                    if match:
-                        return rhs, len(stack) - len(rhs_symbols)
+    def find_handle_position(self, stack):
+        left_pos = None
+        right_pos = None
+
+        for i in range(len(stack) - 1, -1, -1):
+            if stack[i] in self.terminals:
+                if right_pos is None:
+                    right_pos = i
+                elif left_pos is None:
+                    left_pos = i
+                    break
+
+        if right_pos is None:
+            return None, None
+
+        if left_pos is None:
+            if stack[right_pos] in ['id', 'num']:
+                return right_pos, right_pos
+            return None, None
+
+        return left_pos, right_pos
+
+    def try_reduce(self, stack):
+        stack_str = ' '.join(stack)
+
+        patterns = [
+            ('P', 'id'),
+            ('P', 'num'),
+            ('F', 'P'),
+            ('T', 'F'),
+            ('E', 'T'),
+        ]
+
+        for lhs, rhs in patterns:
+            if stack[-1] == rhs:
+                return lhs, 1
+
+        binops = [
+            ('F', 'mulop'),
+            ('T', 'addop'),
+            ('E', 'relop'),
+            ('T', '+'),
+            ('T', '-'),
+            ('F', '*'),
+            ('F', '/'),
+        ]
+
+        for lhs, op in binops:
+            if len(stack) >= 3:
+                if stack[-2] == op:
+                    if (stack[-3] in self.non_terminals or stack[-3] in ['id', 'num', ')']) and \
+                       (stack[-1] in self.non_terminals or stack[-1] in ['id', 'num', '(']):
+                        return lhs, 3
+
+        if len(stack) >= 2 and stack[-2] == 'not':
+            if stack[-1] in self.non_terminals or stack[-1] in ['id', 'num', '(']:
+                return 'P', 2
+
+        if len(stack) >= 3 and stack[-3] == '(' and stack[-1] == ')':
+            if stack[-2] in self.non_terminals:
+                return 'P', 3
 
         return None, 0
 
-    def reduce(self, handle):
-        for lhs in self.grammar:
-            for rhs in self.grammar[lhs]:
-                if rhs == handle:
-                    return lhs
-        return None
+    def reduce(self, stack):
+        nt, count = self.try_reduce(stack)
+        if nt:
+            handle = stack[-count:]
+            for _ in range(count):
+                stack.pop()
+            stack.append(nt)
+            return nt, handle
+        return None, None
 
     def parse(self, input_str):
         tokens = self.tokenize(input_str)
@@ -285,99 +233,126 @@ class OperatorPrecedenceParser:
         print(f"\n{'Stack':<35} {'Input':<25} {'Action':<10} {'Detail'}")
         print("-" * 80)
 
-        while True:
-            stack_top = None
-            for s in reversed(stack):
-                if s not in ['<', '=', '>']:
-                    stack_top = s
-                    break
+        steps = 0
+        max_steps = 100
 
-            if stack_top is None:
-                stack_top = stack[-1]
+        while steps < max_steps:
+            steps += 1
 
+            stack_top_term = self.get_top_terminal(stack)
             current_input = tokens[input_ptr]
 
-            stack_str = ''.join(stack)
-            input_str_rem = ''.join(tokens[input_ptr:])
+            stack_str = ' '.join(stack)
+            input_str_rem = ' '.join(tokens[input_ptr:])
 
-            if stack_top == '$' and current_input == '$' and len(stack) == 1:
-                print(f"{stack_str:<35} {input_str_rem:<25} {'Accept':<10}")
-                print("\n" + "=" * 80)
-                print("PARSING COMPLETE: String accepted!")
-                print("=" * 80)
-                return True
+            if stack_top_term == '$' and current_input == '$':
+                if len(stack) == 2 and stack[-1] in self.non_terminals:
+                    nt = stack.pop()
+                    print(f"{stack_str:<35} {input_str_rem:<25} {'Reduce':<10} {nt} -> E")
+                    stack_str = ' '.join(stack)
+                    print(f"{stack_str:<35} {input_str_rem:<25} {'Accept':<10}")
+                    print("\n" + "=" * 80)
+                    print("PARSING COMPLETE: String accepted!")
+                    print("=" * 80)
+                    return True
+                elif len(stack) == 1:
+                    print(f"{stack_str:<35} {input_str_rem:<25} {'Accept':<10}")
+                    print("\n" + "=" * 80)
+                    print("PARSING COMPLETE: String accepted!")
+                    print("=" * 80)
+                    return True
 
-            relation = self.get_relation(stack_top, current_input)
+            if stack_top_term is None:
+                stack_top_term = '$'
+
+            relation = self.get_relation(stack_top_term, current_input)
 
             if relation is None:
+                if stack_top_term in self.non_terminals:
+                    pass
                 print(f"{stack_str:<35} {input_str_rem:<25} {'Error':<10}")
-                print(f"\nError: No precedence relation between '{stack_top}' and '{current_input}'")
+                print(f"\nError: No precedence relation between '{stack_top_term}' and '{current_input}'")
                 return False
 
             if relation in ['<', '=']:
-                print(f"{stack_str:<35} {input_str_rem:<25} {'Shift':<10} {stack_top} {relation} {current_input}")
-                stack.append(relation)
+                print(f"{stack_str:<35} {input_str_rem:<25} {'Shift':<10} {stack_top_term} {relation} {current_input}")
                 stack.append(current_input)
                 input_ptr += 1
             elif relation == '>':
-                handle, handle_start = self.find_handle(stack)
-                if handle:
-                    lhs = self.reduce(handle)
-                    if lhs:
-                        print(f"{stack_str:<35} {input_str_rem:<25} {'Reduce':<10} {handle} -> {lhs}")
-                        stack = stack[:handle_start]
-                        stack.append(lhs)
-                    else:
-                        print(f"{stack_str:<35} {input_str_rem:<25} {'Error':<10}")
-                        print(f"\nError: No production matches handle '{handle}'")
-                        return False
+                nt, handle = self.reduce(stack)
+                if nt and handle:
+                    handle_str = ' '.join(handle)
+                    print(f"{stack_str:<35} {input_str_rem:<25} {'Reduce':<10} {handle_str} -> {nt}")
                 else:
                     print(f"{stack_str:<35} {input_str_rem:<25} {'Error':<10}")
-                    print("\nError: Could not find handle")
+                    print("\nError: Could not reduce")
                     return False
+
+        print("\nError: Too many steps")
+        return False
 
     def print_grammar(self):
         print("\n" + "=" * 80)
         print("OPERATOR GRAMMAR (Filtered for Operator Precedence Parser)")
         print("=" * 80)
-        print("\nOriginal expression grammar:")
-        for lhs in sorted(self.grammar.keys()):
-            productions = []
-            for rhs in self.grammar[lhs]:
-                productions.append(rhs)
-            print(f"  {lhs:<2} -> {' | '.join(productions)}")
+        print("""
+Expression Grammar (Operator Grammar):
+  E -> E relop T | T
+  T -> T addop F | F | T + F | T - F
+  F -> F mulop P | P | F * F | F / F
+  P -> id | num | ( E ) | not P
 
-        print("\n\nNote: Operator grammar rules:")
-        print("  1. No epsilon (null) productions")
-        print("  2. No two adjacent non-terminals on RHS")
-        print("  3. All operators have defined precedence")
+Filtered Grammar Rules Applied:
+  1. Removed productions with null (epsilon)
+  2. Removed productions with adjacent non-terminals (kept only operator grammar)
+  3. Kept only expression-related productions (actual operator grammar)
 
-    def print_first_last(self):
+Note: Original Pascal grammar had many productions that are NOT operator grammars:
+  - declarations -> declarations var identifier_list : type ;
+  - subprogram_declaration -> subprogram_head declarations compound_statement
+  These have adjacent non-terminals and are skipped for operator precedence parsing.
+""")
+
+    def print_precedence_levels(self):
         print("\n" + "=" * 80)
-        print("FIRST and LAST SETS")
+        print("OPERATOR PRECEDENCE LEVELS")
         print("=" * 80)
-        for nt in sorted(self.non_terminals):
-            print(f"\n{nt}:")
-            print(f"  FIRST: {sorted(self.first_set[nt])}")
-            print(f"  LAST:  {sorted(self.last_set[nt])}")
+        print("""
+  Level    Operators       Associativity    Description
+  -----    ---------       -------------    -----------
+    9      ( )             left             Parentheses (highest)
+    8      not             right            Logical NOT
+    7      mulop, *, /     left             Multiplicative
+    6      addop, +, -     left             Additive
+    4      relop           none             Relational (<, <=, =, <>, >=, >)
+    1      =               right            Assignment (lowest)
+
+Precedence Table Construction Method:
+  1. FIRST sets: For each non-terminal, find first terminal symbols
+  2. LAST sets: For each non-terminal, find last terminal symbols  
+  3. For production X -> aYb: a = b
+  4. For production X -> aY: a < FIRST(Y)
+  5. For production X -> Ya: LAST(Y) > a
+  6. For arithmetic: add manual precedence based on standard levels
+""")
 
     def print_precedence_table(self):
         print("\n" + "=" * 80)
         print("OPERATOR PRECEDENCE TABLE")
         print("=" * 80)
 
-        key_terminals = ['$', 'id', 'num', '+', '-', '*', '/', '(', ')',
-                         'addop', 'mulop', 'relop', 'not']
+        terminals = ['$', 'id', 'num', '(', ')', '+', '-', '*', '/',
+                     'addop', 'mulop', 'relop', 'not']
 
         print(f"\n{'':<8}", end='')
-        for t in key_terminals:
+        for t in terminals:
             print(f"{t:<8}", end='')
         print()
-        print("-" * (8 + len(key_terminals) * 8))
+        print("-" * (8 + len(terminals) * 8))
 
-        for row in key_terminals:
+        for row in terminals:
             print(f"{row:<8}", end='')
-            for col in key_terminals:
+            for col in terminals:
                 rel = self.get_relation(row, col)
                 if rel:
                     print(f"{rel:<8}", end='')
@@ -385,27 +360,11 @@ class OperatorPrecedenceParser:
                     print(f"{'':<8}", end='')
             print()
 
-        print("\n\nPrecedence Relations:")
-        print("  <  : a < b  (a has lower precedence than b)")
-        print("  >  : a > b  (a has higher precedence than b)")
-        print("  =  : a = b  (a and b have equal precedence or are paired)")
-
-    def print_precedence_levels(self):
-        print("\n" + "=" * 80)
-        print("OPERATOR PRECEDENCE LEVELS")
-        print("=" * 80)
         print("""
-  Level    Operators    Associativity
-  -----    ---------    -------------
-    8      not          right
-    7      mulop (*,/) left
-    6      addop (+,-) left
-    4      relop        none
-    2      = (assign)   right
-
-  Note:
-  - Parentheses () have highest precedence
-  - $ is the sentinel marker
+Precedence Relation Legend:
+  <  : Stack terminal has LOWER precedence than input terminal (Shift)
+  >  : Stack terminal has HIGHER precedence than input terminal (Reduce)
+  =  : Stack and input terminals have EQUAL precedence or are paired (Shift)
 """)
 
 
@@ -414,18 +373,17 @@ def main():
 
     parser.print_grammar()
     parser.print_precedence_levels()
-    parser.print_first_last()
     parser.print_precedence_table()
 
     test_inputs = [
         "id + id * id",
         "( id + id ) * id",
         "id * id + id",
-        "not id + id",
-        "id addop id mulop id",
-        "id relop id",
+        "not id",
         "( ( id + id ) )",
         "num + num * num",
+        "id addop id mulop id",
+        "id relop id",
     ]
 
     print("\n" + "=" * 80)
