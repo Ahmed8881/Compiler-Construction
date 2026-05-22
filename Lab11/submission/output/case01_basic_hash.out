@@ -1,0 +1,10 @@
+lookup count -> found
+lookup index -> found
+lookup nothere1 -> not found
+lookup total -> found
+lookup nothere2 -> not found
+delete index -> deleted
+delete total -> deleted
+delete temp -> deleted
+Final table state:
+[table dump omitted]
