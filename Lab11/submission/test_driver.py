@@ -1,19 +1,13 @@
-"""Test driver for the Lab 13 symbol table manager."""
-
 from __future__ import annotations
-
 import sys
-
 from src.symtable import SymTable, begin_scope, end_scope
 
 
 def emit_error(message: str) -> None:
-    """Write an error message to standard error."""
     sys.stderr.write(message + "\n")
 
 
 def scenario1() -> None:
-    """Simulate scope handling for the Pascal program described in the lab."""
     global_scope = begin_scope(None)
     global_scope.insert("myProg", "function", "integer", line=1)
     global_scope.insert("input", "parameter", "integer", line=1)
@@ -54,7 +48,6 @@ def scenario1() -> None:
 
 
 def scenario2() -> None:
-    """Exercise hash-table insert, lookup, delete, and final dump behavior."""
     table = begin_scope(None)
 
     inserts = [
@@ -86,7 +79,6 @@ def scenario2() -> None:
 
 
 def main() -> None:
-    """Run the two required symbol-table test scenarios."""
     print("=" * 60)
     print("SCENARIO 1: Pascal Program Simulation")
     print("=" * 60)

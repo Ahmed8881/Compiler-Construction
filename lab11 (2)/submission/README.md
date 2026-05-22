@@ -1,6 +1,4 @@
-# Lab 11 Alternate Symbol Table Submission
-
-This folder contains a second version of the Lab 11 symbol-table work with different filenames and internal identifiers, but the same required behavior.
+# Compiler Lab
 
 ## Files
 

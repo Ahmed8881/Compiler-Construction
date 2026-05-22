@@ -1,7 +1,5 @@
-"""Nested symbol table utilities for the lab submission."""
 
 from __future__ import annotations
-
 import sys
 from typing import Iterator
 
@@ -9,7 +7,6 @@ BUCKET_COUNT = 211
 
 
 class SymbolCell:
-    """One chained record stored inside a hash bucket."""
 
     def __init__(
         self,
@@ -36,7 +33,6 @@ class SymbolCell:
 
 
 class ScopeTable:
-    """A single scope backed by a chained hash table."""
 
     def __init__(self, parent: ScopeTable | None = None, level: int = 0) -> None:
         self.buckets: list[SymbolCell | None] = [None] * BUCKET_COUNT

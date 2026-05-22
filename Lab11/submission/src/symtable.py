@@ -1,7 +1,4 @@
-"""Hash-based symbol table manager with nested scope support."""
-
 from __future__ import annotations
-
 import sys
 from typing import Iterator
 
@@ -9,7 +6,6 @@ TABLE_SIZE = 211
 
 
 class Entry:
-    """One symbol table entry stored in a chained hash slot."""
 
     def __init__(
         self,
@@ -20,7 +16,6 @@ class Entry:
         line: int,
         next: Entry | None = None,
     ) -> None:
-        """Create a new symbol table entry."""
         self.name = str(name)
         self.kind = str(kind)
         self.type = str(type_)
@@ -30,7 +25,6 @@ class Entry:
         self._order = 0
 
     def __repr__(self) -> str:
-        """Return a compact debug representation of the entry."""
         return (
             f"Entry(name={self.name}, kind={self.kind}, type={self.type}, "
             f"scope={self.scope_level}, line={self.line})"
@@ -38,24 +32,20 @@ class Entry:
 
 
 class SymTable:
-    """A single scope implemented as a chained hash table."""
 
     def __init__(self, parent: SymTable | None = None, scope_level: int = 0) -> None:
-        """Create an empty symbol table for one scope."""
         self.slots: list[Entry | None] = [None] * TABLE_SIZE
         self.scope_level = int(scope_level)
         self.parent = parent
         self._next_order = 0
 
     def _hash(self, name: str) -> int:
-        """Return the djb2 hash slot for *name* within the table size."""
         h = 5381
         for char in name or "":
             h = ((h << 5) + h) + ord(char)
         return h % TABLE_SIZE
 
     def insert(self, name: str, kind: str, type_: str, line: int) -> Entry | None:
-        """Insert a new entry into the current scope or report a duplicate."""
         if self.lookup_current(name) is not None:
             sys.stderr.write(f"ERROR line {line}: duplicate declaration '{name}'\n")
             return None
@@ -68,7 +58,6 @@ class SymTable:
         return entry
 
     def lookup(self, name: str) -> Entry | None:
-        """Look up *name* in the current scope and all enclosing scopes."""
         index = self._hash(name)
         current: SymTable | None = self
         while current is not None:
@@ -81,7 +70,6 @@ class SymTable:
         return None
 
     def lookup_current(self, name: str) -> Entry | None:
-        """Look up *name* only in the current scope."""
         index = self._hash(name)
         entry = self.slots[index]
         while entry is not None:
@@ -91,7 +79,6 @@ class SymTable:
         return None
 
     def delete(self, name: str) -> bool:
-        """Remove *name* from the current scope and return True on success."""
         index = self._hash(name)
         previous: Entry | None = None
         entry = self.slots[index]
@@ -107,7 +94,6 @@ class SymTable:
         return False
 
     def _iter_entries(self) -> Iterator[Entry]:
-        """Yield every entry stored in the current scope."""
         for slot in self.slots:
             entry = slot
             while entry is not None:
@@ -115,7 +101,6 @@ class SymTable:
                 entry = entry.next
 
     def print_table(self) -> None:
-        """Print a formatted table containing the entries in this scope only."""
         entries = sorted(
             self._iter_entries(),
             key=lambda entry: (entry.line, entry._order, entry.name, entry.kind),
@@ -131,7 +116,6 @@ class SymTable:
         }
 
         def border() -> str:
-            """Build the horizontal table border."""
             return (
                 "+"
                 + "+".join("-" * widths[column] for column in ["ID", "Name", "Kind", "Type", "Scope", "Line"])
@@ -139,7 +123,6 @@ class SymTable:
             )
 
         def row(values: list[str]) -> str:
-            """Format a single table row."""
             return (
                 "|"
                 + f" {values[0]:>{widths['ID'] - 1}} |"
@@ -170,7 +153,6 @@ class SymTable:
 
 
 def begin_scope(current: SymTable | None) -> SymTable:
-    """Create and return a new scope nested inside *current*."""
     new_scope = SymTable(
         parent=current,
         scope_level=0 if current is None else current.scope_level + 1,
@@ -180,14 +162,12 @@ def begin_scope(current: SymTable | None) -> SymTable:
 
 
 def end_scope(current: SymTable) -> SymTable | None:
-    """Print the current scope and return its parent scope."""
     print(f"[Scope {current.scope_level}] Exit, dump:")
     current.print_table()
     return current.parent
 
 
 def print_all_scopes(current: SymTable) -> None:
-    """Print every scope from *current* outward to the global scope."""
     scope = current
     while scope is not None:
         scope.print_table()

@@ -1,7 +1,5 @@
-"""Driver for the alternate Lab 11 symbol table submission."""
 
 from __future__ import annotations
-
 import sys
 
 from src.scope_table import ScopeTable, close_scope, open_scope
