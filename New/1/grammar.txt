@@ -1,0 +1,87 @@
+================================================================================
+ GRAMMAR FOR OPERATOR PRECEDENCE PARSER
+================================================================================
+
+Original Grammar Skipped Rules (not operator grammar):
+---------------------------------------------------------
+The following productions are SKIPPED for operator precedence parsing because:
+  1. They contain NULL (epsilon) productions
+  2. They have ADJACENT NON-TERMINALS on RHS
+  3. They are not part of expression handling
+
+Skipped productions:
+  program → program id ( identifier_list ) ; declarations ...
+  identifier_list → id | identifier_list , id
+  declarations → declarations var identifier_list : type ; | null
+  type → standard_type | array [ num .. num ] of standard_type
+  standard_type → integer | real
+  subprogram_declarations → subprogram_declarations subprogram_declaration ; | null
+  subprogram_declaration → subprogram_head declarations compound_statement
+  subprogram_head → function id arguments : standard_type ; | procedure id arguments ;
+  arguments → ( parameter_list ) | null
+  parameter_list → identifier_list : type | parameter_list ; identifier_list : type
+  compound_statement → begin optional_statements end
+  optional_statements → statement_list | null
+  statement_list → statement | statement_list ; statement
+  statement → variable assignop expression | procedure_statement | compound_statement | ...
+  variable → id | id [ expression ]
+  procedure_statement → id | id ( expression_list )
+  sign → + | -
+
+
+FILTERED OPERATOR GRAMMAR (Expression-only):
+----------------------------------------------
+These productions are KEPT because:
+  1. No epsilon (null) productions
+  2. No adjacent non-terminals (non-terminals are separated by operators)
+  3. Standard operator grammar form
+
+  E  →  E relop T  |  T
+  T  →  T addop F  |  T + F  |  T - F  |  F
+  F  →  F mulop P  |  F * P  |  F / P  |  P
+  P  →  id  |  num  |  ( E )  |  not P
+
+
+OPERATOR PRECEDENCE TABLE:
+---------------------------
+        $       id      num     (       )       +       -       *       /       addop   mulop   relop   not     
+$       =       <       <       <               <       <       <       <       <       <       <       <       
+id      >                               >       >       >       >       >       >       >       >                
+num     >                               >       >       >       >       >       >       >       >                
+(               <       <       <       =       <       <       <       <       <       <       <       <       
+)       >                               >       >       >       >       >       >       >       >                
++       >       <       <       <       >       >       >       <       <       >       <       >       <       
+-       >       <       <       <       >       >       >       <       <       >       <       >       <       
+*       >       <       <       <       >       >       >       >       >       >       >       >       <       
+/       >       <       <       <       >       >       >       >       >       >       >       >       <       
+addop   >       <       <       <       >                                       >       <       >       <       
+mulop   >       <       <       <       >                                       >       >       >       <       
+relop   >       <       <       <       >                                       <       <       >       <       
+not     >       <       <       <                                                       >       >       <       
+
+
+PRECEDENCE LEVELS:
+-------------------
+  Level    Operators       Associativity
+  -----    ---------       -------------
+    9      ( )             left         (highest)
+    8      not             right
+    7      mulop, *, /     left
+    6      addop, +, -     left
+    4      relop           none
+    1      =               right        (lowest)
+
+
+CONSTRUCTION METHOD:
+--------------------
+1. FIRST sets: For each non-terminal, find first terminal symbols
+   FIRST(E) = FIRST(T) = FIRST(F) = FIRST(P) = { id, num, (, not }
+
+2. LAST sets: For each non-terminal, find last terminal symbols
+   LAST(E) = LAST(T) = LAST(F) = LAST(P) = { id, num, ) }
+
+3. Precedence relations:
+   - For X -> ... a b ...: a = b (e.g., ( = ) for parentheses)
+   - For X -> ... a Y ...: a < FIRST(Y) (all terminals starting Y)
+   - For X -> ... Y b ...: LAST(Y) > b (all terminals ending Y)
+   - For arithmetic: higher precedence ops > lower precedence ops

@@ -1,0 +1,9 @@
+Case 4: Scope exit dumps
+
+Actions:
+- Create three nested scopes.
+- Insert symbols in each scope.
+- End the scopes from inner to outer.
+
+Expected behavior:
+- Each end_scope call prints the current scope before returning to the parent.

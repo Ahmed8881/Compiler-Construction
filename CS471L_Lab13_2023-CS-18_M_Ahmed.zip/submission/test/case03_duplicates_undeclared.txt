@@ -1,0 +1,10 @@
+Case 3: Duplicate and undeclared name errors
+
+Actions:
+- Insert x in the global scope.
+- Insert x again in the same scope.
+- Lookup a without declaring it first.
+
+Expected checks:
+- Duplicate declaration should be rejected.
+- Undeclared name should be reported as an error.

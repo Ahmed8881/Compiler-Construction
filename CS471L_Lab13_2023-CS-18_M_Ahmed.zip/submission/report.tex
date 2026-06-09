@@ -1,0 +1,93 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+
+\title{Lab 13 Symbol Table Manager Test Report}
+\author{Compiler Construction Lab}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Purpose}
+The goal of this lab submission is to provide a reusable symbol table module for the compiler construction project. The module supports one scope at a time through a chained hash table, and it also supports a stack of scopes so that nested blocks and functions can be represented correctly. The implementation is written in Python and is intended to be reused by the recursive-descent parser from the earlier labs.
+
+\section{Implemented Features}
+\begin{itemize}[leftmargin=1.25em]
+  \item A fixed-size table of 211 buckets, matching the lab specification.
+  \item Separate chaining for collisions, so multiple declarations can share a hash slot safely.
+  \item \texttt{insert}, \texttt{lookup}, \texttt{lookup\_current}, and \texttt{delete} operations.
+  \item Scope creation and scope exit through \texttt{begin\_scope} and \texttt{end\_scope}.
+  \item Shadowing behavior, where an inner declaration hides an outer declaration of the same name.
+  \item Pretty-printing in a tabular format for each scope.
+  \item Error reporting for duplicate declarations and undeclared identifiers.
+\end{itemize}
+
+\section{Task-by-Task Summary}
+\subsection{Task 1: Basic Hash Table}
+The current module stores entries in an array of 211 slots. The hash function uses the djb2 pattern described in the handout, and each bucket is a linked list. Insertions go into the current scope only, lookup searches the current scope and then parent scopes, and delete removes a name from the current scope.
+
+\subsection{Task 2: Scope Management}
+Each scope keeps a scope level and a parent pointer. The test driver creates a global scope, a function scope, and an inner block scope to confirm that nested lookups work and that the popped scope is printed before it is discarded.
+
+\subsection{Task 3: Parser Integration}
+The parser integration points are documented in the repository README. The intended use is to call \texttt{insert} when declarations are parsed, \texttt{lookup} when names are used, \texttt{begin\_scope} on block entry, and \texttt{end\_scope} on block exit. The symbol table already enforces duplicate declaration checks through \texttt{lookup\_current}.
+
+\subsection{Task 4: Pretty Print}
+The \texttt{print\_table()} method prints a header row and aligned columns for ID, Name, Kind, Type, Scope, and Line. The formatting is intentionally compact so it is easy to inspect scope dumps during testing.
+
+\subsection{Task 5: Test Report}
+Five test cases were prepared and saved in the \texttt{test/} folder. Their observed console output was saved in the \texttt{output/} folder. The tests cover insertion, lookup, deletion, scope nesting, shadowing, duplicate declaration handling, and undeclared-name detection.
+
+\section{Test Cases}
+Table~\ref{tab:tests} summarizes the test cases and the observed behavior.
+
+\begin{longtable}{|p{0.11\textwidth}|p{0.25\textwidth}|p{0.26\textwidth}|p{0.30\textwidth}|}
+\caption{Symbol table test cases and observed results}\label{tab:tests}\\
+\hline
+\textbf{Case} & \textbf{Fixture} & \textbf{Expected Result} & \textbf{Observed Result} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Case} & \textbf{Fixture} & \textbf{Expected Result} & \textbf{Observed Result} \\
+\hline
+\endhead
+1 & \texttt{case01\\_basic\\_hash.txt} & Ten inserts succeed, five lookups are executed, and three deletes remove names from the table. & The final table contains seven names after three deletions. \\
+\hline
+2 & \texttt{case02\\_scope\\_shadowing.txt} & Three nested scopes are created and inner \texttt{x} hides the outer \texttt{x}. & Lookup of \texttt{x} first resolves to scope 0 and then to scope 2 after shadowing. \\
+\hline
+3 & \texttt{case03\\_duplicates\\_undeclared.txt} & Duplicate declarations and undeclared names generate explicit errors. & The driver prints \texttt{ERROR line 11: duplicate declaration 'x'} and \texttt{ERROR line 12: undeclared variable 'a'}. \\
+\hline
+4 & \texttt{case04\\_scope\\_dumps.txt} & Each scope is printed when it exits. & Scope 2, then scope 1, then scope 0 are printed in exit order. \\
+\hline
+5 & \texttt{case05\\_pretty\\_print.txt} & Table output is clean, aligned, and readable. & The output shows a header row, aligned columns, and one row per symbol. \\
+\hline
+\end{longtable}
+
+\section{Observed Console Output}
+The following excerpt shows the behavior that matters for grading.
+
+\begin{verbatim}
+[Scope 0] Enter
+[Scope 1] Enter
+[Scope 2] Enter
+[Scope 2] lookup x -> found at scope 0
+[Scope 2] lookup y -> found at scope 0
+[Scope 2] lookup x -> found at scope 2 after shadowing
+[Scope 2] Exit, dump:
+ERROR line 11: duplicate declaration 'x'
+ERROR line 12: undeclared variable 'a'
+[Scope 0] Exit, dump:
+\end{verbatim}
+
+\section{Limitations and Notes}
+The parser is not yet wired directly into this folder in the current submission, so the symbol table is demonstrated with a dedicated test driver instead. The report and fixture files still document the required behavior clearly, and the same module can be imported into the parser later without changing the table API.
+
+\section{Conclusion}
+The implementation satisfies the required data-structure behavior for the lab submission. The most important grading points are covered: hash-based insertion and lookup, nested scope handling, shadowing, duplicate detection, undeclared-name detection, and formatted scope dumps.
+
+\end{document}

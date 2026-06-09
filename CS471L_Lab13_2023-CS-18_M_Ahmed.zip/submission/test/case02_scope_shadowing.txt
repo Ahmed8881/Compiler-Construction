@@ -1,0 +1,9 @@
+Case 2: Nested scope shadowing
+
+Actions:
+- Begin global scope.
+- Insert myProg, input, output, x, and y.
+- Begin function scope.
+- Begin inner block scope.
+- Insert z, then insert x again to shadow the outer x.
+- Lookup x and y from the inner scope.

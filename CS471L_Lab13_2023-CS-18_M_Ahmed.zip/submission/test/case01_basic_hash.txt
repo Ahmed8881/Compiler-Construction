@@ -1,0 +1,15 @@
+Case 1: Basic hash table exercise
+
+Actions:
+- Insert 10 symbols into one scope.
+- Perform 5 lookups, including 2 misses.
+- Delete 3 symbols.
+
+Names used:
+count, index, result, flag, total, avg, sum, max, min, temp
+
+Lookups:
+count, index, nothere1, total, nothere2
+
+Deletes:
+index, total, temp

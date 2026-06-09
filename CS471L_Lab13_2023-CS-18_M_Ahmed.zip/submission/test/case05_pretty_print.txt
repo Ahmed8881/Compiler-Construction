@@ -1,0 +1,9 @@
+Case 5: Pretty-print formatting
+
+Actions:
+- Insert several names into one scope.
+- Print the scope table.
+
+Expected behavior:
+- Output contains a header row.
+- Columns are aligned and easy to read.
